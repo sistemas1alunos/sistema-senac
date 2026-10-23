@@ -67,6 +67,27 @@
   <div id="dadosSensiveis" style="background: white; padding: 25px; border-radius: 16px; box-shadow: 0 4px 15px rgba(10,31,68,0.08); filter: blur(6px); pointer-events: none; opacity: 0.7; transition: all 0.3s ease;">
     
     <div class="ficha-grid">
+          <!-- NOVOS CAMPOS DE EDIÇÃO -->
+    <div class="ficha-grid">
+      <div>
+        <label class="ficha-label">Nome Completo</label>
+        <input type="text" id="editNome" class="ficha-input" disabled>
+      </div>
+      <div>
+        <label class="ficha-label">Turma</label>
+        <input type="text" id="editTurma" class="ficha-input" disabled>
+      </div>
+    </div>
+    <div class="ficha-grid">
+      <div>
+        <label class="ficha-label">Turno</label>
+        <select id="editTurno" class="ficha-input" disabled>
+          <option value="Manhã">Manhã</option>
+          <option value="Tarde">Tarde</option>
+        </select>
+      </div>
+    </div>
+    <!-- FIM DOS NOVOS CAMPOS -->
       <div>
         <label class="ficha-label">Data de Nascimento</label>
         <input type="text" id="dataNascimento" class="ficha-input" disabled>
@@ -123,6 +144,9 @@ async function carregarFicha() {
 
     // Preenche os campos
     document.getElementById('dataNascimento').value = dadosAluno.data_nascimento || '';
+    document.getElementById('editNome').value = dadosAluno.nome;
+    document.getElementById('editTurma').value = dadosAluno.turma;
+    document.getElementById('editTurno').value = dadosAluno.turno;
     document.getElementById('nomeResponsavel').value = dadosAluno.nome_responsavel || '';
     document.getElementById('telefoneResponsavel').value = dadosAluno.telefone_responsavel || '';
     document.getElementById('especificidade').value = dadosAluno.especificidade || '';
@@ -161,7 +185,7 @@ function togglePrivacidade() {
 
 // Lógica de Edição
 function ativarEdicao() {
-  const inputs = document.querySelectorAll('#dadosSensiveis input, #dadosSensiveis textarea');
+  const inputs = document.querySelectorAll('#dadosSensiveis input, #dadosSensiveis select, #dadosSensiveis textarea');
   inputs.forEach(i => {
     i.disabled = false;
     i.style.background = 'white';
@@ -178,6 +202,10 @@ async function salvarFicha() {
   btnSalvar.disabled = true;
 
   const payload = {
+    nome: document.getElementById('editNome').value,
+    turma: document.getElementById('editTurma').value.toUpperCase(),
+    turno: document.getElementById('editTurno').value,
+    data_nascimento: document.getElementById('dataNascimento').value,
     data_nascimento: document.getElementById('dataNascimento').value,
     nome_responsavel: document.getElementById('nomeResponsavel').value,
     telefone_responsavel: document.getElementById('telefoneResponsavel').value,
