@@ -23,8 +23,8 @@ USUARIOS = {
     "ericasantos": {"senha": "!Sen@c.E5", "cargo": "Apoio de sala Erica"},
     "luciana": {"senha": "!Sen@c.lu", "cargo": "Coordenadora Luciana"},
     "yasnaya": {"senha": "!Sen@c.Yas", "cargo": "Apoio de sala Yasnaya"},
-    "erickacristina": {"senha": "!Sen@c.Ec", "cargo": "Estagiária Erika Cristina"},
-    "cayre": {"senha": "!Sen@c.C6", "cargo": "Inspetora Cayre"}
+    "erickacristina": {"senha": "!Sen@c.Ec", "cargo": "Coodernadora Erika Cristina"},
+    "cayre": {"senha": "!Sen@c.C6", "cargo": " Cayre"}
 }
 SENHA_GERAL = "!Sen@c"
 
