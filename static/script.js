@@ -9,7 +9,10 @@ document.querySelectorAll('.tab').forEach(btn => {
     // Carrega os dados específicos de cada aba ao clicar
     if (btn.dataset.tab === 'ocorrencias') carregarSelectAlunos();
     if (btn.dataset.tab === 'turmas') carregarTurmasAdmin();
-    if (btn.dataset.tab === 'mural') carregarMural(); // <-- Ativa o Mural aqui
+    if (btn.dataset.tab === 'mural') {
+      carregarMural();
+      carregarGraficos(); // <--- Carrega os gráficos ao clicar no Mural
+    }
   });
 });
 
@@ -335,7 +338,7 @@ document.getElementById('formOcorrencia').addEventListener('submit', async (e) =
     carregarHistorico(payload.aluno_id);
     if (turmaAtual === "") carregarTurmas();
     else carregarAlunos();
-    checarNotificacoes(); // <-- Atualiza o sino na hora
+    checarNotificacoes(); // Atualiza o sino na hora
   }
 });
 
@@ -405,11 +408,8 @@ async function excluirAluno(id) {
 }
 
 // ===== MURAL GERAL E NOTIFICAÇÕES =====
-
-// Variável para guardar o ID da última ocorrência vista
 let ultimaOcorrenciaVista = localStorage.getItem('ultimaOcorrencia') || 0;
 
-// Carrega o mural
 async function carregarMural() {
   const turma = document.getElementById('filtroTurmaMural')?.value || '';
   const aluno = document.getElementById('filtroAlunoMural')?.value || '';
@@ -440,7 +440,6 @@ async function carregarMural() {
     `;
   }).join('');
   
-  // Se estamos no mural, atualiza a última vista
   if (lista.length > 0) {
     localStorage.setItem('ultimaOcorrencia', lista[0].id);
     document.getElementById('badge-notif').style.display = 'none';
@@ -451,15 +450,11 @@ function filtrarMural() {
   carregarMural();
 }
 
-// Verifica novas notificações
 async function checarNotificacoes() {
   try {
     const r = await fetch('/api/todas_ocorrencias');
     const lista = await r.json();
-    
-    // Conta quantas são maiores que a última vista
     const novas = lista.filter(o => o.id > ultimaOcorrenciaVista).length;
-    
     const badge = document.getElementById('badge-notif');
     if (novas > 0 && badge) {
       badge.innerText = novas;
@@ -468,23 +463,17 @@ async function checarNotificacoes() {
   } catch (e) {}
 }
 
-// Abre o mural ao clicar no sino
 function verNotificacoes() {
   document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
   document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-  
-  // Ativa a aba mural manualmente
   const btnMural = document.querySelector('[data-tab="mural"]');
   if (btnMural) btnMural.classList.add('active');
   document.getElementById('mural').classList.add('active');
-  
   carregarMural();
 }
 
-// Avança o ano letivo
 async function avancarAnoLetivo() {
   if (!confirm("⚠️ ATENÇÃO: Isso vai mudar a turma de TODOS os alunos cadastrados. Exemplo: 1A vira 2A. Tem certeza?")) return;
-  
   const r = await fetch('/api/avancar_ano', { method: 'POST' });
   if (r.ok) {
     alert('✅ Alunos avançados de ano com sucesso!');
@@ -492,6 +481,68 @@ async function avancarAnoLetivo() {
     carregarMural();
   } else {
     alert('❌ Erro ao avançar de ano.');
+  }
+}
+
+// ===== GRÁFICOS DO DASHBOARD =====
+let chartTurmasInstance = null;
+let chartCodigosInstance = null;
+
+async function carregarGraficos() {
+  try {
+    const r = await fetch('/api/estatisticas');
+    const dados = await r.json();
+    
+    if (chartTurmasInstance) chartTurmasInstance.destroy();
+    if (chartCodigosInstance) chartCodigosInstance.destroy();
+
+    const labelsTurmas = dados.turmas.map(t => `Turma ${t.turma}`);
+    const dataTurmas = dados.turmas.map(t => t.total);
+    
+    const ctxTurmas = document.getElementById('graficoTurmas').getContext('2d');
+    chartTurmasInstance = new Chart(ctxTurmas, {
+      type: 'bar',
+      data: {
+        labels: labelsTurmas,
+        datasets: [{
+          label: 'Qtd. de Ocorrências',
+          data: dataTurmas,
+          backgroundColor: '#f97316',
+          borderRadius: 6
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+      }
+    });
+
+    const labelsCodigos = dados.codigos.map(c => c.codigo);
+    const coresCodigos = dados.codigos.map(c => OCORRENCIAS[c.codigo] ? OCORRENCIAS[c.codigo].cor : '#ccc');
+    const dataCodigos = dados.codigos.map(c => c.total);
+
+    const ctxCodigos = document.getElementById('graficoCodigos').getContext('2d');
+    chartCodigosInstance = new Chart(ctxCodigos, {
+      type: 'doughnut',
+      data: {
+        labels: labelsCodigos,
+        datasets: [{
+          data: dataCodigos,
+          backgroundColor: coresCodigos,
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { position: 'right', labels: { boxWidth: 12, font: { size: 11 } } } }
+      }
+    });
+
+  } catch (e) {
+    console.error("Erro ao carregar gráficos", e);
   }
 }
 
@@ -527,6 +578,5 @@ window.addEventListener('pageshow', (event) => {
 });
 
 // ===== INICIALIZAÇÃO DO SISTEMA =====
-// Verifica notificações a cada 30 segundos
 setInterval(checarNotificacoes, 30000);
 checarNotificacoes();
