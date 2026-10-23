@@ -303,5 +303,66 @@ def deletar_turma(tid):
     return jsonify({"ok": True})
 
 
+# ===== ROTA PARA AVANÇO DE ANO =====
+@app.route("/api/avancar_ano", methods=["POST"])
+def avancar_ano():
+    conn = get_db()
+    turmas = conn.execute("SELECT nome FROM turmas").fetchall()
+    
+    # Lógica de progressão (ex: 1A vira 2A, 2A vira 3A, 3A vira 3A)
+    for t in turmas:
+        nome_atual = t['nome']
+        # Pega o número da turma (ex: '1' de '1A')
+        num_atual = int(nome_atual[0]) if nome_atual[0].isdigit() else 1
+        letra = nome_atual[1:] if len(nome_atual) > 1 else ""
+        
+        # Calcula o próximo ano letivo (máximo 3º ano)
+        novo_num = num_atual + 1
+        if novo_num > 3: novo_num = 3 
+        
+        novo_nome = f"{novo_num}{letra}"
+        
+        # Atualiza os alunos
+        conn.execute("UPDATE alunos SET turma = ? WHERE turma = ?", (novo_nome, nome_atual))
+        # Atualiza o nome na tabela de turmas
+        conn.execute("UPDATE turmas SET nome = ? WHERE nome = ?", (novo_nome, nome_atual))
+        
+    conn.commit()
+    conn.close()
+    return jsonify({"ok": True, "msg": "Alunos avançados de ano com sucesso!"})
+
+# ===== ROTA PARA O MURAL GERAL E NOTIFICAÇÕES =====
+@app.route("/api/todas_ocorrencias")
+def todas_ocorrencias():
+    conn = get_db()
+    # Filtros
+    turma = request.args.get("turma", "")
+    aluno = request.args.get("aluno", "")
+    data_ini = request.args.get("data_ini", "")
+    
+    sql = """
+        SELECT o.*, a.nome as aluno_nome, a.turma as aluno_turma 
+        FROM ocorrencias o
+        JOIN alunos a ON o.aluno_id = a.id
+        WHERE 1=1
+    """
+    params = []
+    if turma:
+        sql += " AND a.turma = ?"
+        params.append(turma)
+    if aluno:
+        sql += " AND a.nome LIKE ?"
+        params.append(f"%{aluno}%")
+    if data_ini:
+        sql += " AND o.data >= ?"
+        params.append(data_ini)
+        
+    sql += " ORDER BY o.id DESC"
+    rows = conn.execute(sql, params).fetchall()
+    
+    # Conta quantas ocorrências foram criadas nos últimos 7 dias para o sino de notificação
+    conn.close()
+    return jsonify([dict(r) for r in rows])
+
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=5000)
