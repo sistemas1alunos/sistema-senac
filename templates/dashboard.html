@@ -11,7 +11,7 @@
 </head>
 <body>
 <header class="topbar">
-  <div class="logo">🏫 SENAC <span>2026</span></div>
+  <div class="logo"> SENAC <span>2026</span></div>
   <nav>
     <button class="tab active" data-tab="alunos">👥 Alunos</button>
     <button class="tab" data-tab="turmas">🏫 Turmas</button>
@@ -70,9 +70,12 @@
 
   <!-- ABA TURMAS -->
   <section id="turmas" class="tab-content">
+    
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
       <h2 style="margin: 0;">Gerenciar Turmas</h2>
-      
+        <button onclick="abrirFinalizarAno()" style="background: #7c3aed; color: white; padding: 10px 20px; border-radius: 8px; border: none; cursor: pointer; font-weight: bold;">
+          📅 Finalizar Ano Letivo
+        </button>
       <a href="/api/backup" style="background: #475569; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: bold; display: flex; align-items: center; gap: 8px;">
         💾 Baixar Backup do Sistema
       </a>
@@ -96,7 +99,7 @@
       </div>
       <button onclick="cadastrarNovaTurma()" style="width: auto; padding: 13px 25px;">➕ Criar Turma</button>
     </div>
-
+  
     <div id="listaTurmas" class="grid-turmas-admin"></div>
   </section>
 
@@ -208,6 +211,20 @@
     </div>
 
     <div id="listaMural" style="margin-top: 20px;"></div>
+  </section>
+  <section id="finalizar" class="tab-content">
+    <h2>Finalizar Ano Letivo</h2>
+    <p style="color: #64748b; margin-bottom: 20px;">
+      Marque quem foi <strong>aprovado</strong>. Os alunos do 3º ano aprovados serão movidos para "FORMADO". Os reprovados permanecerão na mesma turma.
+    </p>
+    
+    <div id="listaAprovacao" style="margin-top: 20px;"></div>
+    
+    <div style="display: flex; gap: 10px; margin-top: 30px;">
+      <button onclick="salvarProgressao()" style="background: #059669; color: white; padding: 14px 30px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; font-size: 16px;">
+        ✅ Confirmar Fim de Ano
+      </button>
+    </div>
   </section>
 </main>
 
