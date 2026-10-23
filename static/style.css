@@ -93,15 +93,16 @@ h3 { color: var(--marinho); margin: 25px 0 15px; }
   cursor: pointer;
   transition: all .25s; 
   border-top: 4px solid var(--laranja);
+  position: relative; /* Para o badge de ocorrência funcionar */
 }
 .aluno-card:hover { transform: translateY(-5px); box-shadow: 0 12px 30px rgba(10,31,68,.15); }
 .aluno-foto {
-  width: 100%; height: 180px; object-fit: cover;
+  width: 100%; height: 160px; object-fit: cover; /* Reduzi de 180px para 160px */
   background: linear-gradient(135deg, var(--marinho), var(--marinho-2));
   display: block;
 }
 .aluno-foto.vazia { display: flex; align-items: center; justify-content: center; color: white; font-size: 48px; font-weight: 800; }
-.aluno-info { padding: 14px; }
+.aluno-info { padding: 12px; }
 .aluno-info h4 { color: var(--marinho); font-size: 15px; margin-bottom: 6px; }
 .aluno-info p { color: #64748b; font-size: 12px; }
 .tag-turma {
@@ -115,7 +116,7 @@ h3 { color: var(--marinho); margin: 25px 0 15px; }
   background: white; padding: 25px; border-radius: 14px;
   box-shadow: 0 4px 15px rgba(10,31,68,.08); max-width: 600px;
   display: flex; flex-direction: column; gap: 14px;
-  margin: 0 auto; /* 👈 ADICIONE ESTA LINHA AQUI */
+  margin: 0 auto; 
 }
 .form-card input, .form-card select, .form-card textarea {
   padding: 13px; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 14px;
@@ -168,27 +169,21 @@ h3 { color: var(--marinho); margin: 25px 0 15px; }
 }
 .close { position: absolute; top: 12px; right: 18px; font-size: 28px; cursor: pointer; color: #94a3b8; }
 
-@media (max-width: 600px) {
-  .topbar { flex-direction: column; gap: 12px; }
-  .topbar nav { flex-wrap: wrap; justify-content: center; }
-  main { padding: 15px; }
-}
-
-
-
 /* Cores dinâmicas para a legenda */
-.badge-far { background-color: #1e3a8a; }
-.badge-cel { background-color: #f97316; }
-.badge-atr { background-color: #f59e0b; }
-.badge-adv { background-color: #dc2626; }
-.badge-dsr { background-color: #7c3aed; }
-.badge-sai { background-color: #0891b2; }
-.badge-uni { background-color: #0d9488; }
-.badge-bul { background-color: #be123c; }
-.badge-dan { background-color: #78350f; }
-.badge-out { background-color: #475569; }
-
-
+.badge-f01 { background-color: #1e3a8a; }
+.badge-c01 { background-color: #f97316; }
+.badge-a01 { background-color: #f59e0b; }
+.badge-g01 { background-color: #dc2626; }
+.badge-d01 { background-color: #7c3aed; }
+.badge-b01 { background-color: #be123c; }
+.badge-p01 { background-color: #9f1239; }
+.badge-v01 { background-color: #991b1b; }
+.badge-fq1 { background-color: #475569; }
+.badge-m01 { background-color: #0891b2; }
+.badge-i01 { background-color: #0d9488; }
+.badge-s01 { background-color: #d97706; }
+.badge-t01 { background-color: #78350f; }
+.badge-o01 { background-color: #64748b; }
 
 /* ===== NOVOS ESTILOS: VIEW DE TURMAS ===== */
 .grid-turmas {
@@ -273,10 +268,6 @@ h3 { color: var(--marinho); margin: 25px 0 15px; }
 }
 
 /* ===== ALERTA DE OCORRÊNCIA NO CARD DO ALUNO ===== */
-.aluno-card {
-  position: relative;
-}
-
 .badge-ocorrencia {
   position: absolute;
   top: 10px;
@@ -324,6 +315,7 @@ h3 { color: var(--marinho); margin: 25px 0 15px; }
 .card-turma-admin button {
   width: 100%; padding: 10px; background: var(--laranja); color: white;
   border: none; border-radius: 8px; font-weight: bold; cursor: pointer;
+  transition: all 0.2s;
 }
 .card-turma-admin button:hover { background: var(--laranja-2); }
 
@@ -335,7 +327,6 @@ h3 { color: var(--marinho); margin: 25px 0 15px; }
   display: flex; align-items: center; gap: 10px;
   background: #f8fafc; padding: 8px 12px; border-radius: 8px;
 }
-.badge { min-width: 45px; text-align: center; }
 
 /* ===== AUTOCOMPLETE DE ALUNOS ===== */
 .autocomplete-container { position: relative; width: 100%; }
@@ -358,21 +349,28 @@ h3 { color: var(--marinho); margin: 25px 0 15px; }
   display: block;
   white-space: nowrap;
   overflow: hidden;
-  text-overflow: ellipsis; /* Coloca "..." se o nome for muito grande */
+  text-overflow: ellipsis;
   max-width: 100%;
 }
 
-/* ===== RESPONSIVIDADE MOBILE ===== */
+/* Ajustes extras Lixeira */
+.hist-item button:hover {
+  transform: scale(1.2);
+  transition: transform 0.2s;
+}
+#listaAprovacao > div:hover {
+  background: #f8fafc !important;
+  border-left: 4px solid #7c3aed;
+}
+
+/* ===== RESPONSIVIDADE MOBILE (CORRIGIDA) ===== */
 @media (max-width: 768px) {
   /* Topbar */
   .topbar {
     flex-direction: column;
     padding: 15px;
     gap: 15px;
-   .form-card input, .form-card select, .form-card textarea, .autocomplete-container input[type="text"] {
-    font-size: 16px !important; /* Evita o zoom no celular */
   }
-}
   .topbar nav {
     flex-wrap: wrap;
     justify-content: center;
@@ -393,14 +391,14 @@ h3 { color: var(--marinho); margin: 25px 0 15px; }
 
   /* Grid de Turmas e Alunos */
   .grid-turmas, #listaAlunos, .grid-turmas-admin {
-    grid-template-columns: 1fr; /* Uma coluna no celular */
+    grid-template-columns: 1fr;
   }
 
   /* Cards de Alunos */
-  .aluno-foto { height: 220px; }
+  .aluno-foto { height: 180px; }
   .card-turma h2 { font-size: 26px; }
 
-  /* Formulário de Nova Turma (Aquele que fica lado a lado) */
+  /* Formulário de Nova Turma */
   #turmas .form-card {
     flex-direction: column !important;
     align-items: stretch !important;
@@ -424,33 +422,11 @@ h3 { color: var(--marinho); margin: 25px 0 15px; }
   /* Autocomplete */
   .autocomplete-lista { max-height: 150px; }
 
-  /* Formulário de Ocorrências */
-  .form-card input, .form-card select, .form-card textarea {
-    font-size: 16px; /* Evita que o iPhone dê zoom ao clicar */
+  /* Evita que o iPhone dê zoom ao clicar nos campos */
+  .form-card input, .form-card select, .form-card textarea, .autocomplete-container input[type="text"] {
+    font-size: 16px !important; 
   }
-}
-
-
-/* ===== AJUSTES EXTRAS (LIXEIRA E FIM DE ANO) ===== */
-.hist-item button:hover {
-  transform: scale(1.2);
-  transition: transform 0.2s;
-}
-
-#listaAprovacao > div:hover {
-  background: #f8fafc !important;
-  border-left: 4px solid #7c3aed;
-}
-
-.card-turma-admin button {
-  transition: all 0.2s;
-}
-.card-turma-admin button:hover {
-  background: var(--laranja-2);
-}
-
-/* Ajuste na tag do turno para não quebrar a linha no celular */
-@media (max-width: 768px) {
+  
   .legenda-grid { grid-template-columns: 1fr; }
   #listaAprovacao > div { flex-direction: column; align-items: flex-start !important; gap: 10px; }
 }
