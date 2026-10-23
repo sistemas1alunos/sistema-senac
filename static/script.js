@@ -441,3 +441,104 @@ window.addEventListener('pageshow', (event) => {
     window.location.href = '/login';
   }
 });
+// ===== MURAL GERAL E NOTIFICAÇÕES =====
+
+// Variável para guardar o ID da última ocorrência vista
+let ultimaOcorrenciaVista = localStorage.getItem('ultimaOcorrencia') || 0;
+
+// Carrega o mural
+async function carregarMural() {
+  const turma = document.getElementById('filtroTurmaMural')?.value || '';
+  const aluno = document.getElementById('filtroAlunoMural')?.value || '';
+  const data = document.getElementById('filtroData')?.value || '';
+
+  const url = `/api/todas_ocorrencias?turma=${turma}&aluno=${aluno}&data_ini=${data}`;
+  const r = await fetch(url);
+  const lista = await r.json();
+  
+  const div = document.getElementById('listaMural');
+  if (!lista.length) {
+    div.innerHTML = '<p style="color:#94a3b8;">Nenhuma ocorrência encontrada com esses filtros.</p>';
+    return;
+  }
+
+  div.innerHTML = lista.map(o => {
+    const oc = OCORRENCIAS[o.codigo] || { nome: o.codigo, cor: '#64748b' };
+    return `
+      <div class="hist-item" style="border-left-color:${oc.cor}">
+        <div style="display: flex; justify-content: space-between;">
+          <strong>${o.aluno_nome} (${o.aluno_turma})</strong>
+          <small>${o.data}</small>
+        </div>
+        <span class="badge" style="background:${oc.cor}">${o.codigo}</span> ${oc.nome}<br>
+        <small>Registrado por: ${o.registrado_por}</small>
+        ${o.descricao ? `<p style="margin-top:8px; font-size:13px;">${o.descricao}</p>` : ''}
+      </div>
+    `;
+  }).join('');
+  
+  // Se estamos no mural, atualiza a última vista
+  if (lista.length > 0) {
+    localStorage.setItem('ultimaOcorrencia', lista[0].id);
+    document.getElementById('badge-notif').style.display = 'none';
+  }
+}
+
+function filtrarMural() {
+  carregarMural();
+}
+
+// Verifica novas notificações
+async function checarNotificacoes() {
+  try {
+    const r = await fetch('/api/todas_ocorrencias');
+    const lista = await r.json();
+    
+    // Conta quantas são maiores que a última vista
+    const novas = lista.filter(o => o.id > ultimaOcorrenciaVista).length;
+    
+    const badge = document.getElementById('badge-notif');
+    if (novas > 0 && badge) {
+      badge.innerText = novas;
+      badge.style.display = 'block';
+    }
+  } catch (e) {}
+}
+
+// Abre o mural ao clicar no sino
+function verNotificacoes() {
+  document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  
+  // Ativa a aba mural manualmente
+  document.querySelector('[data-tab="mural"]').classList.add('active');
+  document.getElementById('mural').classList.add('active');
+  
+  carregarMural();
+}
+
+// Avança o ano letivo
+async function avancarAnoLetivo() {
+  if (!confirm("⚠️ ATENÇÃO: Isso vai mudar a turma de TODOS os alunos cadastrados. Exemplo: 1A vira 2A. Tem certeza?")) return;
+  
+  const r = await fetch('/api/avancar_ano', { method: 'POST' });
+  if (r.ok) {
+    alert('✅ Alunos avançados de ano com sucesso!');
+    carregarTurmas(); // Atualiza a tela principal
+    carregarMural();
+  } else {
+    alert('❌ Erro ao avançar de ano.');
+  }
+}
+
+// ===== INICIALIZAÇÃO =====
+// Verifica notificações a cada 30 segundos (se estiver logado)
+setInterval(checarNotificacoes, 30000);
+checarNotificacoes();
+
+// Se clicar na aba mural, carrega os dados
+document.querySelectorAll('.tab').forEach(btn => {
+  btn.addEventListener('click', () => {
+    if (btn.dataset.tab === 'mural') carregarMural();
+  });
+});
