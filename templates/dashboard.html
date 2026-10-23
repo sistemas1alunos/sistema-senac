@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22> </text></svg>">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏫</text></svg>">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <link rel="manifest" href="/static/manifest.json">
   <meta name="theme-color" content="#0a1f44">
@@ -11,7 +11,7 @@
 </head>
 <body>
 <header class="topbar">
-  <div class="logo"> SENAC <span>2026</span></div>
+  <div class="logo">🏫 SENAC <span>2026</span></div>
   <nav>
     <button class="tab active" data-tab="alunos">👥 Alunos</button>
     <button class="tab" data-tab="turmas">🏫 Turmas</button>
@@ -19,6 +19,9 @@
     <button class="tab" data-tab="ocorrencias">📋 Registrar</button>
     
     <button class="tab" data-tab="mural">📊 Mural Geral</button>
+    
+    <!-- BOTÃO DA LIXEIRA -->
+    <button class="tab" onclick="abrirLixeira()">🗑 Lixeira</button>
     
     <!-- SINO DE NOTIFICAÇÃO -->
     <div style="position: relative; display: inline-block; margin-left: 10px;">
@@ -70,15 +73,20 @@
 
   <!-- ABA TURMAS -->
   <section id="turmas" class="tab-content">
-    
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
       <h2 style="margin: 0;">Gerenciar Turmas</h2>
+      
+      <div style="display: flex; gap: 10px;">
+        <!-- BOTÃO DE FINALIZAR ANO -->
         <button onclick="abrirFinalizarAno()" style="background: #7c3aed; color: white; padding: 10px 20px; border-radius: 8px; border: none; cursor: pointer; font-weight: bold;">
           📅 Finalizar Ano Letivo
         </button>
-      <a href="/api/backup" style="background: #475569; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: bold; display: flex; align-items: center; gap: 8px;">
-        💾 Baixar Backup do Sistema
-      </a>
+
+        <!-- BOTÃO DE BACKUP -->
+        <a href="/api/backup" style="background: #475569; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: bold; display: flex; align-items: center; gap: 8px;">
+          💾 Baixar Backup
+        </a>
+      </div>
     </div>
     
     <div class="form-card" style="margin-bottom: 30px; max-width: 100%; flex-direction: row; align-items: flex-end; flex-wrap: wrap;">
@@ -175,12 +183,10 @@
 
   <!-- ABA MURAL GERAL (COM GRÁFICOS) -->
   <section id="mural" class="tab-content">
-    
     <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 20px;">
       <h2>Mural Geral de Ocorrências</h2>
       <div style="display: flex; gap: 10px;">
         <a href="/api/relatorio_pdf" target="_blank" style="background: #059669; color: white; padding: 10px 20px; border-radius: 8px; font-weight: bold; text-decoration: none;">📄 Baixar PDF</a>
-        <button onclick="avancarAnoLetivo()" style="background: #dc2626; color: white; padding: 10px 20px; border-radius: 8px; font-weight: bold; cursor: pointer;">⏭ Avançar Ano</button>
       </div>
     </div>
 
@@ -212,6 +218,8 @@
 
     <div id="listaMural" style="margin-top: 20px;"></div>
   </section>
+
+  <!-- ABA FINALIZAR ANO -->
   <section id="finalizar" class="tab-content">
     <h2>Finalizar Ano Letivo</h2>
     <p style="color: #64748b; margin-bottom: 20px;">
