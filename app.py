@@ -261,16 +261,28 @@ def atualizar_aluno(aid):
 def registrar_ocorrencia():
     data = request.get_json()
     conn = get_db()
-    # Agora o "registrado_por" pega direto da sessão do usuário logado!
+    
+    # Pega a data e hora enviadas pelo formulário
+    data_manual = data.get("data")
+    hora_manual = data.get("hora", "")
+    
+    # Se o usuário digitou a data, junta com a hora (se houver). 
+    # Se não digitou, usa a data e hora do sistema (agora).
+    if data_manual:
+        data_formatada = f"{data_manual} às {hora_manual}" if hora_manual else data_manual
+    else:
+        data_formatada = datetime.now().strftime("%d/%m/%Y às %H:%M")
+        
     conn.execute("""INSERT INTO ocorrencias 
         (aluno_id, codigo, descricao, registrado_por, data)
         VALUES (?,?,?,?,?)""",
         (data["aluno_id"], data["codigo"], data.get("descricao", ""),
-         session.get("usuario_nome", "Desconhecido"), datetime.now().strftime("%d/%m/%Y %H:%M")))
+         session.get("usuario_nome", "Desconhecido"), data_formatada))
+    
     conn.commit()
     conn.close()
     return jsonify({"ok": True})
-
+    
 @app.route("/api/ocorrencias/<int:aluno_id>")
 def listar_ocorrencias(aluno_id):
     conn = get_db()
