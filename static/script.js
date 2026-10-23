@@ -319,7 +319,6 @@ document.getElementById('formOcorrencia').addEventListener('submit', async (e) =
   const payload = {
     aluno_id: +alunoId,
     codigo: document.getElementById('selCodigo').value,
-    registrado_por: document.getElementById('selFunc').value,
     descricao: document.getElementById('descricao').value
   };
   
