@@ -422,5 +422,22 @@ def gerar_relatorio_pdf():
     return response
 # ☝️ FIM DA ROTA DO PDF ☝️
 
+
+# ===== ROTA PARA BAIXAR BACKUP DO BANCO =====
+@app.route("/api/backup")
+def backup_db():
+    # O BASE_DIR garante que ele ache o banco na mesma pasta do app.py
+    db_path = os.path.join(BASE_DIR, "database.db")
+    
+    if not os.path.exists(db_path):
+        return "Banco de dados não encontrado.", 404
+        
+    return send_from_directory(
+        directory=BASE_DIR, 
+        path="database.db", 
+        as_attachment=True, 
+        download_name=f"backup_senac_{datetime.now().strftime('%d_%m_%Y')}.db"
+    )
+
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=5000)
