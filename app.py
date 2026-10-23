@@ -6,7 +6,10 @@ from datetime import datetime
 
 app = Flask(__name__)
 app.secret_key = "senac2026_chave_secreta_super_segura"
-UPLOAD_FOLDER = "static/uploads"
+
+# CAMINHO CORRIGIDO PARA O PYTHONANYWHERE (Não apague o "sistemaalun0s")
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+UPLOAD_FOLDER = os.path.join(BASE_DIR, 'static', 'uploads')
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 
@@ -38,7 +41,9 @@ FUNCIONARIOS = [
 
 # ===== BANCO DE DADOS =====
 def init_db():
-    conn = sqlite3.connect("database.db")
+    # Garante que o banco fique na mesma pasta do app.py
+    db_path = os.path.join(BASE_DIR, "database.db")
+    conn = sqlite3.connect(db_path)
     c = conn.cursor()
     c.execute("""CREATE TABLE IF NOT EXISTS alunos (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -85,7 +90,8 @@ def init_db():
 init_db()
 
 def get_db():
-    conn = sqlite3.connect("database.db")
+    db_path = os.path.join(BASE_DIR, "database.db")
+    conn = sqlite3.connect(db_path)
     conn.row_factory = sqlite3.Row
     return conn
 
@@ -111,7 +117,6 @@ def login():
 @app.route("/logout")
 def logout():
     session.clear()
-    # Retorna uma resposta vazia para o sendBeacon do JS não dar erro
     return "", 204 
 
 @app.route("/")
@@ -120,7 +125,6 @@ def dashboard():
     turmas = [r["turma"] for r in conn.execute("SELECT DISTINCT turma FROM alunos ORDER BY turma")]
     conn.close()
     
-    # AQUI ESTÁ O SEGREDO: Criamos a lista "legenda" no Python
     legenda = []
     for k, v in OCORRENCIAS.items():
         legenda.append({"codigo": k, "nome": v["nome"], "cor": v["cor"]})
@@ -130,7 +134,7 @@ def dashboard():
         turmas=turmas, 
         funcionarios=FUNCIONARIOS, 
         ocorrencias=OCORRENCIAS,
-        legenda=legenda  # <--- Enviando a legenda para o HTML
+        legenda=legenda
     )
 
 # ===== API ALUNOS =====
@@ -141,7 +145,6 @@ def api_alunos():
     busca = request.args.get("busca", "").strip()
     turno = request.args.get("turno", "").strip()
 
-    # Query que junta os dados do aluno com a contagem de ocorrências
     sql = """
         SELECT a.*, COUNT(o.id) as total_ocorrencias 
         FROM alunos a
@@ -181,6 +184,7 @@ def cadastrar_aluno():
         ext = os.path.splitext(foto.filename)[1].lower()
         if ext in [".png", ".jpg", ".jpeg", ".webp"]:
             foto_nome = f"{uuid.uuid4().hex}{ext}"
+            # O app.config pega o caminho absoluto correto agora
             foto.save(os.path.join(app.config["UPLOAD_FOLDER"], foto_nome))
 
     conn = get_db()
@@ -198,7 +202,6 @@ def excluir_aluno(aid):
     conn.commit()
     conn.close()
     return jsonify({"ok": True})
-
 
 @app.route("/aluno/<int:aid>")
 def pagina_aluno(aid):
@@ -218,7 +221,6 @@ def atualizar_aluno(aid):
     data = request.get_json()
     conn = get_db()
     
-    # Atualiza os dados
     conn.execute("""UPDATE alunos SET 
         data_nascimento=?, nome_responsavel=?, telefone_responsavel=?, 
         especificidade=?, observacoes_medicas=? WHERE id=?""",
@@ -302,30 +304,27 @@ def deletar_turma(tid):
     conn.close()
     return jsonify({"ok": True})
 
-
 # ===== ROTA PARA AVANÇO DE ANO =====
 @app.route("/api/avancar_ano", methods=["POST"])
 def avancar_ano():
     conn = get_db()
-    turmas = conn.execute("SELECT nome FROM turmas").fetchall()
+    turmas = conn.execute("SELECT nome FROM turmas ORDER BY nome DESC").fetchall()
     
-    # Lógica de progressão (ex: 1A vira 2A, 2A vira 3A, 3A vira 3A)
+    # O "ORDER BY nome DESC" garante que ele mude a 3A antes da 2A, evitando erro de duplicação
     for t in turmas:
         nome_atual = t['nome']
-        # Pega o número da turma (ex: '1' de '1A')
         num_atual = int(nome_atual[0]) if nome_atual[0].isdigit() else 1
         letra = nome_atual[1:] if len(nome_atual) > 1 else ""
         
-        # Calcula o próximo ano letivo (máximo 3º ano)
         novo_num = num_atual + 1
         if novo_num > 3: novo_num = 3 
         
         novo_nome = f"{novo_num}{letra}"
         
-        # Atualiza os alunos
-        conn.execute("UPDATE alunos SET turma = ? WHERE turma = ?", (novo_nome, nome_atual))
-        # Atualiza o nome na tabela de turmas
-        conn.execute("UPDATE turmas SET nome = ? WHERE nome = ?", (novo_nome, nome_atual))
+        # Só atualiza se o nome for diferente (evita erro se já for 3A e virar 3A)
+        if nome_atual != novo_nome:
+            conn.execute("UPDATE alunos SET turma = ? WHERE turma = ?", (novo_nome, nome_atual))
+            conn.execute("UPDATE turmas SET nome = ? WHERE nome = ?", (novo_nome, nome_atual))
         
     conn.commit()
     conn.close()
@@ -335,7 +334,6 @@ def avancar_ano():
 @app.route("/api/todas_ocorrencias")
 def todas_ocorrencias():
     conn = get_db()
-    # Filtros
     turma = request.args.get("turma", "")
     aluno = request.args.get("aluno", "")
     data_ini = request.args.get("data_ini", "")
@@ -359,8 +357,6 @@ def todas_ocorrencias():
         
     sql += " ORDER BY o.id DESC"
     rows = conn.execute(sql, params).fetchall()
-    
-    # Conta quantas ocorrências foram criadas nos últimos 7 dias para o sino de notificação
     conn.close()
     return jsonify([dict(r) for r in rows])
 
