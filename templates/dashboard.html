@@ -1,19 +1,18 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏫</text></svg>">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏫</text></svg>">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <link rel="manifest" href="/static/manifest.json">
   <meta name="theme-color" content="#0a1f44">
-<meta charset="UTF-8">
-<title> 🏫 Painel • Senac 2026</title>
-<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <meta charset="UTF-8">
+  <title>🏫 Painel • Senac 2026</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
 <header class="topbar">
-  <div class="logo"> SENAC <span>2026</span></div>
+  <div class="logo">🏫 SENAC <span>2026</span></div>
   <nav>
-    <nav>
     <button class="tab active" data-tab="alunos">👥 Alunos</button>
     <button class="tab" data-tab="turmas">🏫 Turmas</button>
     <button class="tab" data-tab="cadastro">➕ Cadastrar Aluno</button>
@@ -33,28 +32,7 @@
 </header>
 
 <main>
-      <!-- ABA MURAL GERAL -->
-  <section id="mural" class="tab-content">
-    <div style="display: flex; justify-content: space-between; align-items: center;">
-      <h2>Mural Geral de Ocorrências</h2>
-      <!-- Botão de Avanço de Ano -->
-      <button onclick="avancarAnoLetivo()" style="background: #dc2626; color: white; padding: 10px 20px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;">⏭ Avançar Todos de Ano</button>
-    </div>
-
-    <div class="filtros" style="margin-top: 20px;">
-      <input type="date" id="filtroData" title="Data Inicial">
-      <select id="filtroTurmaMural">
-        <option value="">Todas as Turmas</option>
-        {% for t in turmas %}<option>{{ t }}</option>{% endfor %}
-      </select>
-      <input type="text" id="filtroAlunoMural" placeholder="🔍 Filtrar por nome do aluno...">
-      <button onclick="filtrarMural()" style="background: var(--marinho); color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer;">Filtrar</button>
-    </div>
-
-    <div id="listaMural" style="margin-top: 20px;"></div>
-  </section>
   <!-- ABA ALUNOS -->
-    
   <section id="alunos" class="tab-content active">
     <div class="filtros">
       <input type="text" id="busca" placeholder="🔍 Buscar aluno por nome...">
@@ -64,7 +42,6 @@
         <option value="1B">1B</option>
         <option value="2A">2A</option>
         <option value="2B">2B</option>
-        <!-- O sistema preencherá dinamicamente se houver outras turmas -->
         {% for t in turmas %}
           {% if t not in ['1A', '1B', '2A', '2B'] %}
             <option>{{ t }}</option>
@@ -90,9 +67,9 @@
       </div>
       <div id="listaAlunos"></div>
     </div>
+  </section>
 
-        </section>
-          <!-- ABA TURMAS -->
+  <!-- ABA TURMAS -->
   <section id="turmas" class="tab-content">
     <h2>Gerenciar Turmas</h2>
     
@@ -128,29 +105,29 @@
       <input type="text" name="turma" placeholder="Turma (ex: 1A, 2B)" required>
       <select name="turno" required>
         <option value="">Turno</option>
-        <option>Manhã</option><option>Tarde</option><option>
+        <option>Manhã</option>
+        <option>Tarde</option>
       </select>
       <label class="upload-label" style="display: flex; flex-direction: column; gap: 5px;">
         <span>📷 Foto do aluno</span>
         <input type="file" name="foto" id="inputFoto" accept="image/*">
         <span id="nomeArquivo" style="font-size: 12px; color: #059669; font-weight: bold; margin-top: 5px;"></span>
-    </label>
+      </label>
       <button type="submit">Cadastrar Aluno</button>
     </form>
   </section>
 
-    <!-- ABA OCORRÊNCIAS -->
+  <!-- ABA OCORRÊNCIAS -->
   <section id="ocorrencias" class="tab-content">
     <h2>Registrar Ocorrência</h2>
     <form id="formOcorrencia" class="form-card">
       
-      <!-- 👇 COLE O AUTOCOMPLETE AQUI (substituindo o select antigo) 👇 -->
+      <!-- Busca de Aluno -->
       <div class="autocomplete-container">
         <input type="text" id="buscaAlunoOcorrencia" placeholder="🔍 Digite o nome do aluno..." autocomplete="off" required>
-        <input type="hidden" id="selAluno" required> <!-- Guarda o ID do aluno escolhido -->
+        <input type="hidden" id="selAluno" required>
         <div id="sugestoesAluno" class="autocomplete-lista"></div>
       </div>
-      <!-- ☝️ FIM DO AUTOCOMPLETE ☝️ -->
 
       <select id="selCodigo" required>
           <option value="">Tipo de ocorrência...</option>
@@ -171,7 +148,7 @@
     <h3>Histórico</h3>
     <div id="historico"></div>
 
-        <div class="legenda">
+    <div class="legenda">
       <h3>🔖 Legenda de Códigos</h3>
       <div class="legenda-grid">
         {% for item in legenda %}
@@ -182,6 +159,26 @@
         {% endfor %}
       </div>
     </div>
+  </section>
+
+  <!-- ABA MURAL GERAL -->
+  <section id="mural" class="tab-content">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <h2>Mural Geral de Ocorrências</h2>
+      <button onclick="avancarAnoLetivo()" style="background: #dc2626; color: white; padding: 10px 20px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;">⏭ Avançar Todos de Ano</button>
+    </div>
+
+    <div class="filtros" style="margin-top: 20px;">
+      <input type="date" id="filtroData" title="Data Inicial">
+      <select id="filtroTurmaMural">
+        <option value="">Todas as Turmas</option>
+        {% for t in turmas %}<option>{{ t }}</option>{% endfor %}
+      </select>
+      <input type="text" id="filtroAlunoMural" placeholder="🔍 Filtrar por nome do aluno...">
+      <button onclick="filtrarMural()" style="background: var(--marinho); color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer;">Filtrar</button>
+    </div>
+
+    <div id="listaMural" style="margin-top: 20px;"></div>
   </section>
 </main>
 
