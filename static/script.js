@@ -310,6 +310,7 @@ function selecionarAluno(id, nome, turma) {
 }
 
 // ===== REGISTRAR OCORRÊNCIA =====
+// ===== REGISTRAR OCORRÊNCIA =====
 document.getElementById('formOcorrencia').addEventListener('submit', async (e) => {
   e.preventDefault();
   const alunoId = document.getElementById('selAluno').value;
@@ -319,26 +320,60 @@ document.getElementById('formOcorrencia').addEventListener('submit', async (e) =
     return;
   }
 
+  const dataInput = document.getElementById('dataOcorrencia').value;
+  const horaInput = document.getElementById('horaOcorrencia').value;
+
+  // Transforma a data de AAAA-MM-DD para DD/MM/AAAA
+  let dataFormatada = "";
+  if (dataInput) {
+    const [ano, mes, dia] = dataInput.split('-');
+    dataFormatada = `${dia}/${mes}/${ano}`;
+  }
+
   const payload = {
     aluno_id: +alunoId,
     codigo: document.getElementById('selCodigo').value,
-    descricao: document.getElementById('descricao').value
+    descricao: document.getElementById('descricao').value,
+    data: dataFormatada,
+    hora: horaInput
   };
   
-  const r = await fetch('/api/ocorrencias', {
-    method: 'POST', headers: {'Content-Type':'application/json'},
-    body: JSON.stringify(payload)
-  });
-  
-  if (r.ok) {
-    alert('✅ Ocorrência registrada!');
-    e.target.reset();
-    inputBuscaAluno.value = "";
-    inputHiddenAluno.value = "";
-    carregarHistorico(payload.aluno_id);
-    if (turmaAtual === "") carregarTurmas();
-    else carregarAlunos();
-    checarNotificacoes(); // Atualiza o sino na hora
+  try {
+    const r = await fetch('/api/ocorrencias', {
+      method: 'POST', 
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(payload)
+    });
+    
+    if (r.ok) {
+      alert('✅ Ocorrência registrada!');
+      e.target.reset();
+      
+      // Limpa a busca e o ID escondido
+      inputBuscaAluno.value = "";
+      inputHiddenAluno.value = "";
+      
+      // Preenche a data com o dia de hoje novamente, pois o form.reset() limpa o campo
+      const hoje = new Date();
+      const ano = hoje.getFullYear();
+      const mes = String(hoje.getMonth() + 1).padStart(2, '0');
+      const dia = String(hoje.getDate()).padStart(2, '0');
+      document.getElementById('dataOcorrencia').value = `${ano}-${mes}-${dia}`;
+
+      // Atualiza o histórico na tela
+      carregarHistorico(payload.aluno_id);
+      
+      // Atualiza a tela principal (turmas ou alunos)
+      if (turmaAtual === "") carregarTurmas();
+      else carregarAlunos();
+      
+      checarNotificacoes(); 
+    } else {
+      alert('❌ Erro ao registrar a ocorrência. Verifique os dados.');
+    }
+  } catch (error) {
+    console.error(error);
+    alert('❌ Erro de conexão com o servidor.');
   }
 });
 
@@ -580,3 +615,13 @@ window.addEventListener('pageshow', (event) => {
 // ===== INICIALIZAÇÃO DO SISTEMA =====
 setInterval(checarNotificacoes, 30000);
 checarNotificacoes();
+
+
+const inputData = document.getElementById('dataOcorrencia');
+if (inputData) {
+  const hoje = new Date();
+  const ano = hoje.getFullYear();
+  const mes = String(hoje.getMonth() + 1).padStart(2, '0');
+  const dia = String(hoje.getDate()).padStart(2, '0');
+  inputData.value = `${ano}-${mes}-${dia}`;
+}
