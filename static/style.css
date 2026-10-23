@@ -369,7 +369,10 @@ h3 { color: var(--marinho); margin: 25px 0 15px; }
     flex-direction: column;
     padding: 15px;
     gap: 15px;
+   .form-card input, .form-card select, .form-card textarea, .autocomplete-container input[type="text"] {
+    font-size: 16px !important; /* Evita o zoom no celular */
   }
+}
   .topbar nav {
     flex-wrap: wrap;
     justify-content: center;
