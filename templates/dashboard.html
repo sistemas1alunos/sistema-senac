@@ -11,17 +11,48 @@
 </head>
 <body>
 <header class="topbar">
-  <div class="logo"> 🏫 SENAC <span>2026</span></div>
+  <div class="logo"> SENAC <span>2026</span></div>
   <nav>
-  <button class="tab active" data-tab="alunos">👥 Alunos</button>
-  <button class="tab" data-tab="turmas">🏫 Turmas</button> <!-- NOVO -->
-  <button class="tab" data-tab="cadastro">➕ Cadastrar Aluno</button>
-  <button class="tab" data-tab="ocorrencias">📋 Ocorrências</button>
-  <a href="#" onclick="sairDoSistema(event)" class="sair">Sair</a>
-</nav>
+    <nav>
+    <button class="tab active" data-tab="alunos">👥 Alunos</button>
+    <button class="tab" data-tab="turmas">🏫 Turmas</button>
+    <button class="tab" data-tab="cadastro">➕ Cadastrar Aluno</button>
+    <button class="tab" data-tab="ocorrencias">📋 Registrar</button>
+    
+    <!-- NOVA ABA DO MURAL -->
+    <button class="tab" data-tab="mural">📊 Mural Geral</button>
+    
+    <!-- SINO DE NOTIFICAÇÃO -->
+    <div style="position: relative; display: inline-block; margin-left: 10px;">
+      <button onclick="verNotificacoes()" style="background:none; border:none; font-size: 20px; cursor: pointer;">🔔</button>
+      <span id="badge-notif" style="display:none; position: absolute; top: -5px; right: -10px; background: red; color: white; border-radius: 50%; padding: 2px 6px; font-size: 10px; font-weight: bold;">0</span>
+    </div>
+
+    <a href="#" onclick="sairDoSistema(event)" class="sair">Sair</a>
+  </nav>
 </header>
 
 <main>
+      <!-- ABA MURAL GERAL -->
+  <section id="mural" class="tab-content">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <h2>Mural Geral de Ocorrências</h2>
+      <!-- Botão de Avanço de Ano -->
+      <button onclick="avancarAnoLetivo()" style="background: #dc2626; color: white; padding: 10px 20px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;">⏭ Avançar Todos de Ano</button>
+    </div>
+
+    <div class="filtros" style="margin-top: 20px;">
+      <input type="date" id="filtroData" title="Data Inicial">
+      <select id="filtroTurmaMural">
+        <option value="">Todas as Turmas</option>
+        {% for t in turmas %}<option>{{ t }}</option>{% endfor %}
+      </select>
+      <input type="text" id="filtroAlunoMural" placeholder="🔍 Filtrar por nome do aluno...">
+      <button onclick="filtrarMural()" style="background: var(--marinho); color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer;">Filtrar</button>
+    </div>
+
+    <div id="listaMural" style="margin-top: 20px;"></div>
+  </section>
   <!-- ABA ALUNOS -->
     
   <section id="alunos" class="tab-content active">
