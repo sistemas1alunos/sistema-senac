@@ -11,7 +11,7 @@ document.querySelectorAll('.tab').forEach(btn => {
     if (btn.dataset.tab === 'turmas') carregarTurmasAdmin();
     if (btn.dataset.tab === 'mural') {
       carregarMural();
-      carregarGraficos(); // <--- Carrega os gráficos ao clicar no Mural
+      carregarGraficos();
     }
   });
 });
@@ -310,7 +310,6 @@ function selecionarAluno(id, nome, turma) {
 }
 
 // ===== REGISTRAR OCORRÊNCIA =====
-// ===== REGISTRAR OCORRÊNCIA =====
 document.getElementById('formOcorrencia').addEventListener('submit', async (e) => {
   e.preventDefault();
   const alunoId = document.getElementById('selAluno').value;
@@ -323,7 +322,6 @@ document.getElementById('formOcorrencia').addEventListener('submit', async (e) =
   const dataInput = document.getElementById('dataOcorrencia').value;
   const horaInput = document.getElementById('horaOcorrencia').value;
 
-  // Transforma a data de AAAA-MM-DD para DD/MM/AAAA
   let dataFormatada = "";
   if (dataInput) {
     const [ano, mes, dia] = dataInput.split('-');
@@ -349,21 +347,17 @@ document.getElementById('formOcorrencia').addEventListener('submit', async (e) =
       alert('✅ Ocorrência registrada!');
       e.target.reset();
       
-      // Limpa a busca e o ID escondido
       inputBuscaAluno.value = "";
       inputHiddenAluno.value = "";
       
-      // Preenche a data com o dia de hoje novamente, pois o form.reset() limpa o campo
       const hoje = new Date();
       const ano = hoje.getFullYear();
       const mes = String(hoje.getMonth() + 1).padStart(2, '0');
       const dia = String(hoje.getDate()).padStart(2, '0');
       document.getElementById('dataOcorrencia').value = `${ano}-${mes}-${dia}`;
 
-      // Atualiza o histórico na tela
       carregarHistorico(payload.aluno_id);
       
-      // Atualiza a tela principal (turmas ou alunos)
       if (turmaAtual === "") carregarTurmas();
       else carregarAlunos();
       
@@ -507,18 +501,6 @@ function verNotificacoes() {
   carregarMural();
 }
 
-async function avancarAnoLetivo() {
-  if (!confirm("⚠️ ATENÇÃO: Isso vai mudar a turma de TODOS os alunos cadastrados. Exemplo: 1A vira 2A. Tem certeza?")) return;
-  const r = await fetch('/api/avancar_ano', { method: 'POST' });
-  if (r.ok) {
-    alert('✅ Alunos avançados de ano com sucesso!');
-    carregarTurmas(); 
-    carregarMural();
-  } else {
-    alert('❌ Erro ao avançar de ano.');
-  }
-}
-
 // ===== GRÁFICOS DO DASHBOARD =====
 let chartTurmasInstance = null;
 let chartCodigosInstance = null;
@@ -612,10 +594,88 @@ window.addEventListener('pageshow', (event) => {
   }
 });
 
+// ===== FINALIZAR ANO LETIVO =====
+async function abrirFinalizarAno() {
+  document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  document.getElementById('finalizar').classList.add('active');
+  
+  const r = await fetch('/api/alunos');
+  const alunos = await r.json();
+  
+  const div = document.getElementById('listaAprovacao');
+  
+  if (!alunos.length) {
+    div.innerHTML = '<p style="color:#94a3b8;">Nenhum aluno cadastrado.</p>';
+    return;
+  }
+
+  div.innerHTML = alunos.map(a => `
+    <div style="background: white; padding: 15px; border-radius: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+      <div>
+        <strong>${a.nome}</strong> - Turma ${a.turma}
+      </div>
+      <label style="display: flex; align-items: center; gap: 8px; font-weight: bold; color: #059669; cursor: pointer;">
+        <input type="checkbox" class="check-aprovado" value="${a.id}" checked style="width: 20px; height: 20px;"> Aprovado
+      </label>
+    </div>
+  `).join('');
+}
+
+async function salvarProgressao() {
+  const aprovados = Array.from(document.querySelectorAll('.check-aprovado:checked')).map(cb => +cb.value);
+  
+  if (aprovados.length === 0 && !confirm("Nenhum aluno foi marcado como aprovado. Tem certeza que quer continuar?")) return;
+  if (!confirm("⚠️ Tem certeza? Isso vai mudar as turmas dos alunos aprovados e mover os do 3º ano para 'FORMADO'. Não pode ser desfeito!")) return;
+  
+  const r = await fetch('/api/finalizar_ano', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ aprovados })
+  });
+  
+  if (r.ok) {
+    alert('✅ Ano letivo finalizado com sucesso!');
+    carregarTurmas(); 
+    document.querySelector('[data-tab="turmas"]').click();
+  }
+}
+
+// ===== LIXEIRA =====
+async function abrirLixeira() {
+  const r = await fetch('/api/lixeira');
+  const lixeira = await r.json();
+  
+  document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  document.getElementById('mural').classList.add('active');
+  
+  const div = document.getElementById('listaMural');
+  
+  div.innerHTML = `<h3>🗑 Lixeira de Ocorrências</h3>
+    <button onclick="limparLixeira()" style="background: #dc2626; color: white; padding: 10px 20px; border-radius: 8px; border: none; cursor: pointer; margin-bottom: 20px; font-weight: bold;">Esvaziar Lixeira</button>
+  ` + (lixeira.length === 0 ? '<p style="color:#94a3b8;">A lixeira está vazia.</p>' : lixeira.map(o => `
+    <div class="hist-item" style="border-left-color: #94a3b8; opacity: 0.7;">
+      <strong>${o.aluno_nome}</strong> <br>
+      <small>${o.data} - Código: ${o.codigo}</small>
+      <button onclick="restaurarOcorrencia(${o.id})" style="margin-top: 10px; background: #059669; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer;">Restaurar</button>
+    </div>
+  `).join(''));
+}
+
+async function restaurarOcorrencia(id) {
+  await fetch(`/api/ocorrencias/${id}/restaurar`, { method: 'PUT' });
+  abrirLixeira();
+}
+
+async function limparLixeira() {
+  if(!confirm("Apagar permanentemente todas as ocorrências da lixeira?")) return;
+  await fetch('/api/lixeira/limpar', { method: 'DELETE' });
+  abrirLixeira();
+}
+
 // ===== INICIALIZAÇÃO DO SISTEMA =====
 setInterval(checarNotificacoes, 30000);
 checarNotificacoes();
-
 
 const inputData = document.getElementById('dataOcorrencia');
 if (inputData) {
