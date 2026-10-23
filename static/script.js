@@ -1,4 +1,4 @@
-// ===== TABS =====
+// ===== TABS E NAVEGAÇÃO =====
 document.querySelectorAll('.tab').forEach(btn => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
@@ -6,8 +6,10 @@ document.querySelectorAll('.tab').forEach(btn => {
     btn.classList.add('active');
     document.getElementById(btn.dataset.tab).classList.add('active');
     
+    // Carrega os dados específicos de cada aba ao clicar
     if (btn.dataset.tab === 'ocorrencias') carregarSelectAlunos();
     if (btn.dataset.tab === 'turmas') carregarTurmasAdmin();
+    if (btn.dataset.tab === 'mural') carregarMural(); // <-- Ativa o Mural aqui
   });
 });
 
@@ -19,23 +21,16 @@ document.getElementById('formAluno').addEventListener('submit', async (e) => {
   const fd = new FormData(form);
 
   try {
-    const r = await fetch('/api/alunos', { 
-      method: 'POST', 
-      body: fd 
-    });
+    const r = await fetch('/api/alunos', { method: 'POST', body: fd });
     
     if (r.ok) {
       alert('✅ Aluno cadastrado com sucesso!');
-      form.reset(); // Limpa o formulário
+      form.reset(); 
       
-      // Limpa o nome da foto que aparece na tela
       const nomeArquivo = document.getElementById('nomeArquivo');
       if (nomeArquivo) nomeArquivo.innerText = '';
 
-      // Atualiza a lista de turmas para o novo aluno aparecer lá
-      if (typeof carregarTurmas === 'function') {
-        carregarTurmas();
-      }
+      if (typeof carregarTurmas === 'function') carregarTurmas();
     } else {
       const err = await r.json();
       alert('❌ Erro: ' + (err.erro || 'Falha ao cadastrar'));
@@ -341,6 +336,7 @@ document.getElementById('formOcorrencia').addEventListener('submit', async (e) =
     carregarHistorico(payload.aluno_id);
     if (turmaAtual === "") carregarTurmas();
     else carregarAlunos();
+    checarNotificacoes(); // <-- Atualiza o sino na hora
   }
 });
 
@@ -409,38 +405,6 @@ async function excluirAluno(id) {
   else carregarAlunos();
 }
 
-// ===== BOTÃO SAIR E BLOQUEIO AO SAIR DA TELA =====
-function sairDoSistema(event) {
-  if (event) event.preventDefault();
-  fetch('/logout').finally(() => {
-    window.location.href = '/login'; 
-  });
-}
-
-function forcarLogoutSilencioso() {
-  if (navigator.sendBeacon) {
-    navigator.sendBeacon('/logout');
-  } else {
-    fetch('/logout', { method: 'GET', keepalive: true });
-  }
-}
-
-document.addEventListener('visibilitychange', () => {
-  if (document.hidden) {
-    forcarLogoutSilencioso();
-  }
-});
-
-window.addEventListener('blur', () => {
-  forcarLogoutSilencioso();
-});
-
-window.addEventListener('pageshow', (event) => {
-  if (event.persisted) {
-    forcarLogoutSilencioso();
-    window.location.href = '/login';
-  }
-});
 // ===== MURAL GERAL E NOTIFICAÇÕES =====
 
 // Variável para guardar o ID da última ocorrência vista
@@ -511,7 +475,8 @@ function verNotificacoes() {
   document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
   
   // Ativa a aba mural manualmente
-  document.querySelector('[data-tab="mural"]').classList.add('active');
+  const btnMural = document.querySelector('[data-tab="mural"]');
+  if (btnMural) btnMural.classList.add('active');
   document.getElementById('mural').classList.add('active');
   
   carregarMural();
@@ -524,21 +489,45 @@ async function avancarAnoLetivo() {
   const r = await fetch('/api/avancar_ano', { method: 'POST' });
   if (r.ok) {
     alert('✅ Alunos avançados de ano com sucesso!');
-    carregarTurmas(); // Atualiza a tela principal
+    carregarTurmas(); 
     carregarMural();
   } else {
     alert('❌ Erro ao avançar de ano.');
   }
 }
 
-// ===== INICIALIZAÇÃO =====
-// Verifica notificações a cada 30 segundos (se estiver logado)
+// ===== BOTÃO SAIR E BLOQUEIO AO SAIR DA TELA =====
+function sairDoSistema(event) {
+  if (event) event.preventDefault();
+  fetch('/logout').finally(() => {
+    window.location.href = '/login'; 
+  });
+}
+
+function forcarLogoutSilencioso() {
+  if (navigator.sendBeacon) {
+    navigator.sendBeacon('/logout');
+  } else {
+    fetch('/logout', { method: 'GET', keepalive: true });
+  }
+}
+
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) forcarLogoutSilencioso();
+});
+
+window.addEventListener('blur', () => {
+  forcarLogoutSilencioso();
+});
+
+window.addEventListener('pageshow', (event) => {
+  if (event.persisted) {
+    forcarLogoutSilencioso();
+    window.location.href = '/login';
+  }
+});
+
+// ===== INICIALIZAÇÃO DO SISTEMA =====
+// Verifica notificações a cada 30 segundos
 setInterval(checarNotificacoes, 30000);
 checarNotificacoes();
-
-// Se clicar na aba mural, carrega os dados
-document.querySelectorAll('.tab').forEach(btn => {
-  btn.addEventListener('click', () => {
-    if (btn.dataset.tab === 'mural') carregarMural();
-  });
-});
