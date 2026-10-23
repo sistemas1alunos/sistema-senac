@@ -426,3 +426,28 @@ h3 { color: var(--marinho); margin: 25px 0 15px; }
     font-size: 16px; /* Evita que o iPhone dê zoom ao clicar */
   }
 }
+
+
+/* ===== AJUSTES EXTRAS (LIXEIRA E FIM DE ANO) ===== */
+.hist-item button:hover {
+  transform: scale(1.2);
+  transition: transform 0.2s;
+}
+
+#listaAprovacao > div:hover {
+  background: #f8fafc !important;
+  border-left: 4px solid #7c3aed;
+}
+
+.card-turma-admin button {
+  transition: all 0.2s;
+}
+.card-turma-admin button:hover {
+  background: var(--laranja-2);
+}
+
+/* Ajuste na tag do turno para não quebrar a linha no celular */
+@media (max-width: 768px) {
+  .legenda-grid { grid-template-columns: 1fr; }
+  #listaAprovacao > div { flex-direction: column; align-items: flex-start !important; gap: 10px; }
+}
