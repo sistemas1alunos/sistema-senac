@@ -406,11 +406,14 @@ async function verAluno(id, nome) {
   } else {
     html += lista.map(o => {
       const oc = OCORRENCIAS[o.codigo] || { nome: o.codigo, cor: '#64748b' };
-      return `<div class="hist-item" style="border-left-color:${oc.cor}">
+      return `<div class="hist-item" style="border-left-color:${oc.cor}; position: relative; padding-right: 40px;">
         <span class="badge" style="background:${oc.cor}">${o.codigo}</span>
         <strong>${oc.nome}</strong><br>
         <small>${o.registrado_por} • ${o.data}</small>
         ${o.descricao ? `<p style="margin-top:8px;font-size:13px;">${o.descricao}</p>` : ''}
+        
+        <!-- BOTÃO DE APAGAR A OCORRÊNCIA -->
+        <button onclick="apagarOcorrencia(${o.id})" style="position: absolute; right: 10px; top: 10px; background: none; border: none; color: #dc2626; cursor: pointer; font-size: 18px;" title="Apagar Ocorrência">🗑</button>
       </div>`;
     }).join('');
   }
@@ -421,9 +424,24 @@ async function verAluno(id, nome) {
     </a>
     <button onclick="excluirAluno(${id})" 
       style="background:#dc2626;color:white;padding:12px 16px;
-      border:none;border-radius:8px;cursor:pointer;font-weight:600;">🗑 Excluir</button>
+      border:none;border-radius:8px;cursor:pointer;font-weight:600;">🗑 Excluir Aluno</button>
   </div>`;
   body.innerHTML = html;
+}
+
+// FUNÇÃO PARA MANDAR A OCORRÊNCIA PARA A LIXEIRA
+async function apagarOcorrencia(id) {
+  if (!confirm("Tem certeza que deseja apagar esta ocorrência? Ela irá para a Lixeira.")) return;
+  
+  const r = await fetch(`/api/ocorrencias/${id}`, { method: 'DELETE' });
+  if (r.ok) {
+    alert('🗑 Ocorrência movida para a lixeira!');
+    fecharModal();
+    if (turmaAtual === "") carregarTurmas();
+    else carregarAlunos();
+  } else {
+    alert('❌ Erro ao apagar ocorrência.');
+  }
 }
 
 function fecharModal() { document.getElementById('modal').classList.remove('active'); }
