@@ -1,24 +1,30 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <link rel="manifest" href="/static/manifest.json">
   <meta name="theme-color" content="#0a1f44">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏫</text></svg>">
-<meta charset="UTF-8">
-<title> 🔐 Login - Senac 2026</title>
-<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <meta charset="UTF-8">
+  <title>🔐 Login • Senac 2026</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body class="login-body">
   <div class="login-card">
-    <div class="logo">SENAC <span>2026</span></div>
+    <div class="logo">🏫 SENAC <span>2026</span></div>
     <h1>Registro de Ocorrências</h1>
     <p class="sub">Médio Técnico • Acesso Restrito</p>
-    {% if erro %}<div class="erro">{{ erro }}</div>{% endif %}
+    
+    {% if erro %}
+      <div class="erro">{{ erro }}</div>
+    {% endif %}
+    
     <form method="POST">
-      <input type="password" name="senha" placeholder="Digite a senha" autofocus required>
+      <input type="text" name="usuario" placeholder="Seu login (ex: eliete)" autofocus required>
+      <input type="password" name="senha" placeholder="Sua senha" required>
       <button type="submit">Entrar</button>
     </form>
+    
     <p class="hint">Sessão expira ao sair da tela</p>
   </div>
 </body>
