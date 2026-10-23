@@ -17,6 +17,19 @@ UPLOAD_FOLDER = os.path.join(BASE_DIR, 'static', 'uploads')
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 
+
+# ===== USUÁRIOS DO SISTEMA =====
+USUARIOS = {
+    "eriberto": {"senha": "!Sen@c.E1", "cargo": "Pedagogo Eriberto"},
+    "karol": {"senha": "!Sen@c.K2", "cargo": "Psicopedagoga Karoline"},
+    "barbara": {"senha": "!Sen@c.B3", "cargo": "Psicóloga Barbara"},
+    "eliete": {"senha": "!Sen@c.E4", "cargo": "Inspetora Eliete"},
+    "ericasantos": {"senha": "!Sen@c.E5", "cargo": "Apoio de sala Erica"},
+    "luciana": {"senha": "!Sen@c.lu", "cargo": "Coordenadora Luciana"},
+    "yasnaya": {"senha": "!Sen@c.Yas", "cargo": "Apoio de sala Yasnaya"},
+    "erickacristina": {"senha": "!Sen@c.Ec", "cargo": "Estagiária Erika Cristina"},
+    "cayre": {"senha": "!Sen@c.C6", "cargo": "Inspetora Cayre"}
+}
 SENHA_GERAL = "!Sen@c"
 
 # ===== CÓDIGOS DAS OCORRÊNCIAS =====
@@ -112,10 +125,16 @@ def proteger():
 def login():
     erro = None
     if request.method == "POST":
-        if request.form.get("senha") == SENHA_GERAL:
+        user = request.form.get("usuario", "").strip().lower()
+        senha = request.form.get("senha", "")
+        
+        if user in USUARIOS and USUARIOS[user]["senha"] == senha:
             session["logado"] = True
+            session["usuario_nome"] = USUARIOS[user]["cargo"]
             return redirect(url_for("dashboard"))
-        erro = "Senha incorreta!"
+        else:
+            erro = "Usuário ou senha incorretos!"
+            
     return render_template("login.html", erro=erro)
 
 @app.route("/logout")
@@ -242,11 +261,12 @@ def atualizar_aluno(aid):
 def registrar_ocorrencia():
     data = request.get_json()
     conn = get_db()
+    # Agora o "registrado_por" pega direto da sessão do usuário logado!
     conn.execute("""INSERT INTO ocorrencias 
         (aluno_id, codigo, descricao, registrado_por, data)
         VALUES (?,?,?,?,?)""",
         (data["aluno_id"], data["codigo"], data.get("descricao", ""),
-         data["registrado_por"], datetime.now().strftime("%d/%m/%Y %H:%M")))
+         session.get("usuario_nome", "Desconhecido"), datetime.now().strftime("%d/%m/%Y %H:%M")))
     conn.commit()
     conn.close()
     return jsonify({"ok": True})
