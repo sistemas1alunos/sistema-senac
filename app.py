@@ -245,17 +245,17 @@ def atualizar_aluno(aid):
     conn = get_db()
     
     conn.execute("""UPDATE alunos SET 
+        nome=?, turma=?, turno=?,
         data_nascimento=?, nome_responsavel=?, telefone_responsavel=?, 
         especificidade=?, observacoes_medicas=? WHERE id=?""",
-        (data.get("data_nascimento", ""), data.get("nome_responsavel", ""), 
+        (data.get("nome"), data.get("turma"), data.get("turno"),
+         data.get("data_nascimento", ""), data.get("nome_responsavel", ""), 
          data.get("telefone_responsavel", ""), data.get("especificidade", ""), 
          data.get("observacoes_medicas", ""), aid))
     
     conn.commit()
     conn.close()
-    
     return jsonify({"ok": True})
-
 # ===== API OCORRÊNCIAS =====
 @app.route("/api/ocorrencias", methods=["POST"])
 def registrar_ocorrencia():
