@@ -19,27 +19,27 @@ document.querySelectorAll('.tab').forEach(btn => {
 // ===== CADASTRAR ALUNO =====
 document.getElementById('formAluno').addEventListener('submit', async (e) => {
   e.preventDefault();
-  
   const form = e.target;
   const fd = new FormData(form);
+  
+  const turma = form.querySelector('select[name="turma"]').value;
+  if (!turma) { alert('⚠️ Selecione uma turma.'); return; }
+  fd.set("turno", ""); // O Python deduz o turno pela letra A ou B
 
   try {
     const r = await fetch('/api/alunos', { method: 'POST', body: fd });
-    
     if (r.ok) {
       alert('✅ Aluno cadastrado com sucesso!');
       form.reset(); 
-      
       const nomeArquivo = document.getElementById('nomeArquivo');
       if (nomeArquivo) nomeArquivo.innerText = '';
-
       if (typeof carregarTurmas === 'function') carregarTurmas();
+      carregarTurmasNoSelect(); // Atualiza a lista caso tenha criado turma nova
     } else {
       const err = await r.json();
       alert('❌ Erro: ' + (err.erro || 'Falha ao cadastrar'));
     }
   } catch (error) {
-    console.error(error);
     alert('❌ Erro de conexão com o servidor.');
   }
 });
@@ -690,6 +690,16 @@ async function limparLixeira() {
   await fetch('/api/lixeira/limpar', { method: 'DELETE' });
   abrirLixeira();
 }
+
+async function carregarTurmasNoSelect() {
+  const r = await fetch('/api/turmas');
+  const turmas = await r.json();
+  const select = document.getElementById('selectTurmaCadastro');
+  if (!select) return;
+  select.innerHTML = '<option value="">Selecione a turma...</option>' +
+    turmas.map(t => `<option value="${t.nome}">${t.nome} (${t.turno})</option>`).join('');
+}
+carregarTurmasNoSelect();
 
 // ===== INICIALIZAÇÃO DO SISTEMA =====
 setInterval(checarNotificacoes, 30000);
