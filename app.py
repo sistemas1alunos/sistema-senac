@@ -459,5 +459,36 @@ def backup_db():
         download_name=f"backup_senac_{datetime.now().strftime('%d_%m_%Y')}.db"
     )
 
+# ===== ROTA PARA ESTATÍSTICAS (GRÁFICOS) =====
+@app.route("/api/estatisticas")
+def estatisticas():
+    conn = get_db()
+    
+    # Conta ocorrências por Turma
+    sql_turmas = """
+        SELECT a.turma, COUNT(o.id) as total 
+        FROM ocorrencias o
+        JOIN alunos a ON o.aluno_id = a.id
+        GROUP BY a.turma
+        ORDER BY total DESC
+    """
+    dados_turmas = conn.execute(sql_turmas).fetchall()
+    
+    # Conta ocorrências por Código (Tipo)
+    sql_codigos = """
+        SELECT codigo, COUNT(id) as total 
+        FROM ocorrencias 
+        GROUP BY codigo
+        ORDER BY total DESC
+    """
+    dados_codigos = conn.execute(sql_codigos).fetchall()
+    
+    conn.close()
+    
+    return jsonify({
+        "turmas": [dict(r) for r in dados_turmas],
+        "codigos": [dict(r) for r in dados_codigos]
+    })
+
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=5000)
