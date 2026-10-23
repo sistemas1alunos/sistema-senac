@@ -6,17 +6,13 @@ from datetime import datetime
 from weasyprint import HTML
 import io
 
-
-
 app = Flask(__name__)
 app.secret_key = "senac2026_chave_secreta_super_segura"
 
-# CAMINHO CORRIGIDO PARA O PYTHONANYWHERE (Não apague o "sistemaalun0s")
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 UPLOAD_FOLDER = os.path.join(BASE_DIR, 'static', 'uploads')
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
-
 
 # ===== USUÁRIOS DO SISTEMA =====
 USUARIOS = {
@@ -58,7 +54,6 @@ FUNCIONARIOS = [
 
 # ===== BANCO DE DADOS =====
 def init_db():
-    # Garante que o banco fique na mesma pasta do app.py
     db_path = os.path.join(BASE_DIR, "database.db")
     conn = sqlite3.connect(db_path)
     c = conn.cursor()
@@ -82,7 +77,6 @@ def init_db():
         qtd_alunos INTEGER NOT NULL
     )""")
     
-    # Insere as turmas padrão se a tabela estiver vazia
     c.execute("SELECT COUNT(*) FROM turmas")
     if c.fetchone()[0] == 0:
         turmas_padrao = [
@@ -98,6 +92,7 @@ def init_db():
         descricao TEXT,
         registrado_por TEXT NOT NULL,
         data TEXT NOT NULL,
+        excluida INTEGER DEFAULT 0,
         FOREIGN KEY(aluno_id) REFERENCES alunos(id)
     )""")
     
@@ -168,10 +163,11 @@ def api_alunos():
     busca = request.args.get("busca", "").strip()
     turno = request.args.get("turno", "").strip()
 
+    # AQUI: Contamos as ocorrências APENAS se não estiverem na lixeira
     sql = """
         SELECT a.*, COUNT(o.id) as total_ocorrencias 
         FROM alunos a
-        LEFT JOIN ocorrencias o ON a.id = o.aluno_id
+        LEFT JOIN ocorrencias o ON a.id = o.aluno_id AND o.excluida = 0
         WHERE 1=1
     """
     params = []
@@ -207,7 +203,6 @@ def cadastrar_aluno():
         ext = os.path.splitext(foto.filename)[1].lower()
         if ext in [".png", ".jpg", ".jpeg", ".webp"]:
             foto_nome = f"{uuid.uuid4().hex}{ext}"
-            # O app.config pega o caminho absoluto correto agora
             foto.save(os.path.join(app.config["UPLOAD_FOLDER"], foto_nome))
 
     conn = get_db()
@@ -256,18 +251,16 @@ def atualizar_aluno(aid):
     conn.commit()
     conn.close()
     return jsonify({"ok": True})
+
 # ===== API OCORRÊNCIAS =====
 @app.route("/api/ocorrencias", methods=["POST"])
 def registrar_ocorrencia():
     data = request.get_json()
     conn = get_db()
     
-    # Pega a data e hora enviadas pelo formulário
     data_manual = data.get("data")
     hora_manual = data.get("hora", "")
     
-    # Se o usuário digitou a data, junta com a hora (se houver). 
-    # Se não digitou, usa a data e hora do sistema (agora).
     if data_manual:
         data_formatada = f"{data_manual} às {hora_manual}" if hora_manual else data_manual
     else:
@@ -286,7 +279,8 @@ def registrar_ocorrencia():
 @app.route("/api/ocorrencias/<int:aluno_id>")
 def listar_ocorrencias(aluno_id):
     conn = get_db()
-    rows = conn.execute("""SELECT * FROM ocorrencias WHERE aluno_id = ? 
+    # AQUI: Só mostra se NÃO estiver na lixeira
+    rows = conn.execute("""SELECT * FROM ocorrencias WHERE aluno_id = ? AND excluida = 0
                            ORDER BY id DESC""", (aluno_id,)).fetchall()
     conn.close()
     return jsonify([dict(r) for r in rows])
@@ -317,11 +311,17 @@ def editar_turma(tid):
 def criar_turma():
     data = request.get_json()
     nome = data.get("nome", "").strip().upper()
-    turno = data.get("turno")
     qtd = data.get("qtd_alunos")
     
-    if not nome or not turno or not qtd:
+    if not nome or not qtd:
         return jsonify({"erro": "Preencha todos os campos"}), 400
+
+    if nome.endswith('A'):
+        turno = "Manhã"
+    elif nome.endswith('B'):
+        turno = "Tarde"
+    else:
+        turno = data.get("turno", "Manhã")
         
     try:
         conn = get_db()
@@ -331,7 +331,7 @@ def criar_turma():
         return jsonify({"ok": True})
     except sqlite3.IntegrityError:
         return jsonify({"erro": "Essa turma já está cadastrada!"}), 400
-
+        
 @app.route("/api/turmas/<int:tid>", methods=["DELETE"])
 def deletar_turma(tid):
     conn = get_db()
@@ -340,33 +340,30 @@ def deletar_turma(tid):
     conn.close()
     return jsonify({"ok": True})
 
-# ===== ROTA PARA AVANÇO DE ANO =====
-@app.route("/api/avancar_ano", methods=["POST"])
-def avancar_ano():
-    conn = get_db()
-    turmas = conn.execute("SELECT nome FROM turmas ORDER BY nome DESC").fetchall()
+# ===== ROTA PARA FINALIZAR ANO (PROGRESSÃO) =====
+@app.route("/api/finalizar_ano", methods=["POST"])
+def finalizar_ano():
+    data = request.get_json()
+    aprovados = data.get("aprovados", [])
     
-    # O "ORDER BY nome DESC" garante que ele mude a 3A antes da 2A, evitando erro de duplicação
-    for t in turmas:
-        nome_atual = t['nome']
-        num_atual = int(nome_atual[0]) if nome_atual[0].isdigit() else 1
-        letra = nome_atual[1:] if len(nome_atual) > 1 else ""
-        
-        novo_num = num_atual + 1
-        if novo_num > 3: novo_num = 3 
-        
-        novo_nome = f"{novo_num}{letra}"
-        
-        # Só atualiza se o nome for diferente (evita erro se já for 3A e virar 3A)
-        if nome_atual != novo_nome:
-            conn.execute("UPDATE alunos SET turma = ? WHERE turma = ?", (novo_nome, nome_atual))
-            conn.execute("UPDATE turmas SET nome = ? WHERE nome = ?", (novo_nome, nome_atual))
-        
+    conn = get_db()
+    
+    for aid in aprovados:
+        aluno = conn.execute("SELECT turma FROM alunos WHERE id = ?", (aid,)).fetchone()
+        if aluno:
+            num_atual = int(aluno['turma'][0]) if aluno['turma'][0].isdigit() else 1
+            letra = aluno['turma'][1:] if len(aluno['turma']) > 1 else ""
+            if num_atual < 3:
+                novo_nome = f"{num_atual + 1}{letra}"
+                conn.execute("UPDATE alunos SET turma = ? WHERE id = ?", (novo_nome, aid))
+            else:
+                conn.execute("UPDATE alunos SET turma = 'FORMADO' WHERE id = ?", (aid,))
+    
     conn.commit()
     conn.close()
-    return jsonify({"ok": True, "msg": "Alunos avançados de ano com sucesso!"})
+    return jsonify({"ok": True})
 
-# ===== ROTA PARA O MURAL GERAL E NOTIFICAÇÕES =====
+# ===== ROTA PARA O MURAL GERAL =====
 @app.route("/api/todas_ocorrencias")
 def todas_ocorrencias():
     conn = get_db()
@@ -374,11 +371,12 @@ def todas_ocorrencias():
     aluno = request.args.get("aluno", "")
     data_ini = request.args.get("data_ini", "")
     
+    # AQUI: Filtra as que não estão na lixeira
     sql = """
         SELECT o.*, a.nome as aluno_nome, a.turma as aluno_turma 
         FROM ocorrencias o
         JOIN alunos a ON o.aluno_id = a.id
-        WHERE 1=1
+        WHERE o.excluida = 0
     """
     params = []
     if turma:
@@ -395,19 +393,22 @@ def todas_ocorrencias():
     rows = conn.execute(sql, params).fetchall()
     conn.close()
     return jsonify([dict(r) for r in rows])
+
+# ===== ROTA PARA O PDF =====
 @app.route("/api/relatorio_pdf")
 def gerar_relatorio_pdf():
     conn = get_db()
+    # AQUI: Filtra as que não estão na lixeira
     sql = """
         SELECT o.*, a.nome as aluno_nome, a.turma as aluno_turma, a.turno 
         FROM ocorrencias o
         JOIN alunos a ON o.aluno_id = a.id
+        WHERE o.excluida = 0
         ORDER BY o.id DESC
     """
     rows = conn.execute(sql).fetchall()
     conn.close()
 
-    # Monta o HTML do relatório
     html_content = """
     <html>
     <head>
@@ -444,21 +445,16 @@ def gerar_relatorio_pdf():
     
     html_content += "</body></html>"
 
-    # Converte o HTML em PDF na memória
     pdf_bytes = HTML(string=html_content).write_pdf()
 
-    # Retorna o PDF para o navegador baixar
     response = make_response(pdf_bytes)
     response.headers['Content-Type'] = 'application/pdf'
     response.headers['Content-Disposition'] = 'attachment; filename=relatorio_senac.pdf'
     return response
-# ☝️ FIM DA ROTA DO PDF ☝️
-
 
 # ===== ROTA PARA BAIXAR BACKUP DO BANCO =====
 @app.route("/api/backup")
 def backup_db():
-    # O BASE_DIR garante que ele ache o banco na mesma pasta do app.py
     db_path = os.path.join(BASE_DIR, "database.db")
     
     if not os.path.exists(db_path):
@@ -476,20 +472,22 @@ def backup_db():
 def estatisticas():
     conn = get_db()
     
-    # Conta ocorrências por Turma
+    # AQUI: Filtra as que não estão na lixeira
     sql_turmas = """
         SELECT a.turma, COUNT(o.id) as total 
         FROM ocorrencias o
         JOIN alunos a ON o.aluno_id = a.id
+        WHERE o.excluida = 0
         GROUP BY a.turma
         ORDER BY total DESC
     """
     dados_turmas = conn.execute(sql_turmas).fetchall()
     
-    # Conta ocorrências por Código (Tipo)
+    # AQUI: Filtra as que não estão na lixeira
     sql_codigos = """
         SELECT codigo, COUNT(id) as total 
         FROM ocorrencias 
+        WHERE excluida = 0
         GROUP BY codigo
         ORDER BY total DESC
     """
@@ -501,6 +499,43 @@ def estatisticas():
         "turmas": [dict(r) for r in dados_turmas],
         "codigos": [dict(r) for r in dados_codigos]
     })
+
+# ===== LIXEIRA =====
+@app.route("/api/ocorrencias/<int:oid>", methods=["DELETE"])
+def mover_para_lixeira(oid):
+    conn = get_db()
+    conn.execute("UPDATE ocorrencias SET excluida = 1 WHERE id = ?", (oid,))
+    conn.commit()
+    conn.close()
+    return jsonify({"ok": True})
+
+@app.route("/api/lixeira", methods=["GET"])
+def listar_lixeira():
+    conn = get_db()
+    sql = """
+        SELECT o.*, a.nome as aluno_nome FROM ocorrencias o
+        JOIN alunos a ON o.aluno_id = a.id
+        WHERE o.excluida = 1 ORDER BY o.id DESC
+    """
+    rows = conn.execute(sql).fetchall()
+    conn.close()
+    return jsonify([dict(r) for r in rows])
+
+@app.route("/api/lixeira/limpar", methods=["DELETE"])
+def limpar_lixeira():
+    conn = get_db()
+    conn.execute("DELETE FROM ocorrencias WHERE excluida = 1")
+    conn.commit()
+    conn.close()
+    return jsonify({"ok": True})
+
+@app.route("/api/ocorrencias/<int:oid>/restaurar", methods=["PUT"])
+def restaurar_ocorrencia(oid):
+    conn = get_db()
+    conn.execute("UPDATE ocorrencias SET excluida = 0 WHERE id = ?", (oid,))
+    conn.commit()
+    conn.close()
+    return jsonify({"ok": True})
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=5000)
