@@ -18,7 +18,6 @@
     <button class="tab" data-tab="cadastro">➕ Cadastrar Aluno</button>
     <button class="tab" data-tab="ocorrencias">📋 Registrar</button>
     
-    <!-- NOVA ABA DO MURAL -->
     <button class="tab" data-tab="mural">📊 Mural Geral</button>
     
     <!-- SINO DE NOTIFICAÇÃO -->
@@ -55,10 +54,7 @@
       </select>
     </div>
     
-    <!-- Contêiner principal que vai alternar entre Turmas e Alunos -->
-    <div id="viewTurmas" class="grid-turmas">
-      <!-- Cards das turmas criados via JS -->
-    </div>
+    <div id="viewTurmas" class="grid-turmas"></div>
     
     <div id="viewAlunos" class="grid-alunos" style="display: none;">
       <div class="header-turma">
@@ -71,7 +67,6 @@
 
   <!-- ABA TURMAS -->
   <section id="turmas" class="tab-content">
-    <!-- TÍTULO E BOTÃO DE BACKUP -->
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
       <h2 style="margin: 0;">Gerenciar Turmas</h2>
       
@@ -80,7 +75,6 @@
       </a>
     </div>
     
-    <!-- Formulário de Nova Turma -->
     <div class="form-card" style="margin-bottom: 30px; max-width: 100%; flex-direction: row; align-items: flex-end; flex-wrap: wrap;">
       <div style="flex: 1; min-width: 150px;">
         <label style="font-size: 13px; font-weight: bold; color: var(--marinho);">Nome da Turma</label>
@@ -100,7 +94,6 @@
       <button onclick="cadastrarNovaTurma()" style="width: auto; padding: 13px 25px;">➕ Criar Turma</button>
     </div>
 
-    <!-- Lista de Turmas Cadastradas -->
     <div id="listaTurmas" class="grid-turmas-admin"></div>
   </section>
 
@@ -129,7 +122,6 @@
     <h2>Registrar Ocorrência</h2>
     <form id="formOcorrencia" class="form-card">
       
-      <!-- Busca de Aluno -->
       <div class="autocomplete-container">
         <input type="text" id="buscaAlunoOcorrencia" placeholder="🔍 Digite o nome do aluno..." autocomplete="off" required>
         <input type="hidden" id="selAluno" required>
@@ -142,7 +134,6 @@
           <option value="{{ k }}">{{ k }} - {{ v['nome'] }}</option>
           {% endfor %}
       </select>
-      
       
       <textarea id="descricao" placeholder="Observações (opcional)"></textarea>
       <button type="submit">Registrar</button>
@@ -164,12 +155,39 @@
     </div>
   </section>
 
-  <!-- ABA MURAL GERAL -->
+  <!-- ABA MURAL GERAL (COM GRÁFICOS) -->
   <section id="mural" class="tab-content">
-    <div style="display: flex; justify-content: space-between; align-items: center;">
+    
+    <!-- TÍTULO E BOTÕES -->
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 20px;">
       <h2>Mural Geral de Ocorrências</h2>
-      <button onclick="avancarAnoLetivo()" style="background: #dc2626; color: white; padding: 10px 20px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;">⏭ Avançar Todos de Ano</button>
+      <div style="display: flex; gap: 10px;">
+        <a href="/api/relatorio_pdf" target="_blank" style="background: #059669; color: white; padding: 10px 20px; border-radius: 8px; font-weight: bold; text-decoration: none;">📄 Baixar PDF</a>
+        <button onclick="avancarAnoLetivo()" style="background: #dc2626; color: white; padding: 10px 20px; border-radius: 8px; font-weight: bold; cursor: pointer;">⏭ Avançar Ano</button>
+      </div>
     </div>
+
+    <!-- 👇 ÁREA DOS GRÁFICOS 👇 -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 30px;">
+      
+      <!-- Gráfico de Turmas -->
+      <div style="background: white; padding: 20px; border-radius: 16px; box-shadow: 0 4px 15px rgba(10,31,68,0.08);">
+        <h3 style="text-align: center; color: var(--marinho); margin-bottom: 15px;">Ocorrências por Turma</h3>
+        <div style="position: relative; height: 250px; width: 100%;">
+          <canvas id="graficoTurmas"></canvas>
+        </div>
+      </div>
+
+      <!-- Gráfico de Tipos (Códigos) -->
+      <div style="background: white; padding: 20px; border-radius: 16px; box-shadow: 0 4px 15px rgba(10,31,68,0.08);">
+        <h3 style="text-align: center; color: var(--marinho); margin-bottom: 15px;">Tipos de Ocorrências</h3>
+        <div style="position: relative; height: 250px; width: 100%;">
+          <canvas id="graficoCodigos"></canvas>
+        </div>
+      </div>
+
+    </div>
+    <!-- 👆 FIM DOS GRÁFICOS 👆 -->
 
     <div class="filtros" style="margin-top: 20px;">
       <input type="date" id="filtroData" title="Data Inicial">
@@ -199,6 +217,9 @@
 <script>
   const OCORRENCIAS = JSON.parse(document.getElementById('dados-ocorrencias').textContent);
 </script>
+
+<!-- Importa a biblioteca de gráficos Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
