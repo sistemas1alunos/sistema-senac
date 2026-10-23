@@ -1,8 +1,12 @@
-from flask import Flask, render_template, request, redirect, url_for, session, jsonify, send_from_directory
+from flask import Flask, render_template, request, redirect, url_for, session, jsonify, send_from_directory, make_response
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
 import sqlite3, os, uuid
 from datetime import datetime
+from weasyprint import HTML
+import io
+
+
 
 app = Flask(__name__)
 app.secret_key = "senac2026_chave_secreta_super_segura"
@@ -359,6 +363,64 @@ def todas_ocorrencias():
     rows = conn.execute(sql, params).fetchall()
     conn.close()
     return jsonify([dict(r) for r in rows])
+@app.route("/api/relatorio_pdf")
+def gerar_relatorio_pdf():
+    conn = get_db()
+    sql = """
+        SELECT o.*, a.nome as aluno_nome, a.turma as aluno_turma, a.turno 
+        FROM ocorrencias o
+        JOIN alunos a ON o.aluno_id = a.id
+        ORDER BY o.id DESC
+    """
+    rows = conn.execute(sql).fetchall()
+    conn.close()
+
+    # Monta o HTML do relatório
+    html_content = """
+    <html>
+    <head>
+        <meta charset="UTF-8">
+        <style>
+            body { font-family: Helvetica, Arial, sans-serif; color: #333; }
+            h1 { color: #0a1f44; border-bottom: 2px solid #f97316; padding-bottom: 10px; }
+            .header { margin-bottom: 30px; }
+            .data { font-size: 12px; color: #666; margin-bottom: 20px; }
+            .item { border-left: 4px solid #f97316; padding-left: 15px; margin-bottom: 20px; page-break-inside: avoid; }
+            .item h3 { margin: 0 0 5px 0; color: #0a1f44; font-size: 16px; }
+            .item p { margin: 3px 0; font-size: 13px; }
+            .codigo { font-weight: bold; color: #dc2626; }
+        </style>
+    </head>
+    <body>
+        <div class="header">
+            <h1>🏫 SENAC 2026 - Relatório de Ocorrências</h1>
+            <div class="data">Emitido em: """ + datetime.now().strftime('%d/%m/%Y às %H:%M') + """</div>
+        </div>
+    """
+
+    if not rows:
+        html_content += "<p>Nenhuma ocorrência registrada até o momento.</p>"
+    else:
+        for row in rows:
+            html_content += f"""
+            <div class="item">
+                <h3>{row['aluno_nome']} - Turma {row['aluno_turma']} ({row['turno']})</h3>
+                <p><span class="codigo">Código: {row['codigo']}</span> | Data: {row['data']} | Registrado por: {row['registrado_por']}</p>
+                {f"<p><strong>Obs:</strong> {row['descricao']}</p>" if row['descricao'] else ""}
+            </div>
+            """
+    
+    html_content += "</body></html>"
+
+    # Converte o HTML em PDF na memória
+    pdf_bytes = HTML(string=html_content).write_pdf()
+
+    # Retorna o PDF para o navegador baixar
+    response = make_response(pdf_bytes)
+    response.headers['Content-Type'] = 'application/pdf'
+    response.headers['Content-Disposition'] = 'attachment; filename=relatorio_senac.pdf'
+    return response
+# ☝️ FIM DA ROTA DO PDF ☝️
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=5000)
