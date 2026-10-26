@@ -59,6 +59,7 @@ def init_db():
     db_path = os.path.join(BASE_DIR, "database.db")
     conn = sqlite3.connect(db_path)
     c = conn.cursor()
+    
     c.execute("""CREATE TABLE IF NOT EXISTS alunos (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         nome TEXT NOT NULL,
@@ -72,6 +73,7 @@ def init_db():
         observacoes_medicas TEXT,
         criado_em TEXT
     )""")
+    
     c.execute("""CREATE TABLE IF NOT EXISTS turmas (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         nome TEXT NOT NULL UNIQUE,
@@ -79,6 +81,7 @@ def init_db():
         qtd_alunos INTEGER NOT NULL
     )""")
     
+    # Insere as turmas padrão se a tabela estiver vazia
     c.execute("SELECT COUNT(*) FROM turmas")
     if c.fetchone()[0] == 0:
         turmas_padrao = [
@@ -98,9 +101,19 @@ def init_db():
         FOREIGN KEY(aluno_id) REFERENCES alunos(id)
     )""")
     
+    
+    c.execute("""CREATE TABLE IF NOT EXISTS logs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        usuario TEXT NOT NULL,
+        acao TEXT NOT NULL,
+        detalhes TEXT,
+        data_hora TEXT NOT NULL
+    )""")
+    
+    
     conn.commit()
     conn.close()
-
+    
 init_db()
 
 def get_db():
@@ -108,6 +121,15 @@ def get_db():
     conn = sqlite3.connect(db_path)
     conn.row_factory = sqlite3.Row
     return conn
+
+
+def registrar_log(usuario, acao, detalhes):
+    conn = get_db()
+    data_atual = datetime.now().strftime("%d/%m/%Y às %H:%M")
+    conn.execute("INSERT INTO logs (usuario, acao, detalhes, data_hora) VALUES (?, ?, ?, ?)",
+                 (usuario, acao, detalhes, data_atual))
+    conn.commit()
+    conn.close()
 
 # ===== MIDDLEWARE DE BLOQUEIO =====
 @app.before_request
@@ -221,6 +243,9 @@ def excluir_aluno(aid):
     conn.execute("DELETE FROM alunos WHERE id = ?", (aid,))
     conn.commit()
     conn.close()
+    
+     registrar_log(session.get("usuario_nome"), "Excluir Aluno", f"Apagou o aluno ID {aid} e suas ocorrências.")
+    
     return jsonify({"ok": True})
 
 @app.route("/aluno/<int:aid>")
@@ -252,6 +277,9 @@ def atualizar_aluno(aid):
     
     conn.commit()
     conn.close()
+
+     registrar_log(session.get("usuario_nome"), "Editar Aluno", f"Editou os dados do aluno ID {aid}.")
+
     return jsonify({"ok": True})
 
 # ===== API OCORRÊNCIAS =====
@@ -520,6 +548,7 @@ def mover_para_lixeira(oid):
     conn.execute("UPDATE ocorrencias SET excluida = 1 WHERE id = ?", (oid,))
     conn.commit()
     conn.close()
+     registrar_log(session.get("usuario_nome"), "Lixeira", f"Moveu a ocorrência ID {oid} para a lixeira.")
     return jsonify({"ok": True})
 
 @app.route("/api/lixeira", methods=["GET"])
@@ -605,7 +634,15 @@ def exportar_excel():
     response.headers['Content-Type'] = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     response.headers['Content-Disposition'] = f'attachment; filename=relatorio_senac_{datetime.now().strftime("%d_%m_%Y")}.xlsx'
     return response
-    
+
+
+# ===== ROTA PARA VER OS LOGS =====
+@app.route("/api/logs")
+def api_logs():
+    conn = get_db()
+    rows = conn.execute("SELECT * FROM logs ORDER BY id DESC").fetchall()
+    conn.close()
+    return jsonify([dict(r) for r in rows])
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=5000)
