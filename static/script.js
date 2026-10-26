@@ -716,13 +716,20 @@ carregarTurmasNoSelect();
 // ===== LOGS DE AUDITORIA =====
 async function abrirLogs() {
   // 1. Esconde todas as abas e mostra a de logs
-  document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
   document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
   
   const abaLogs = document.getElementById('logs');
   if (abaLogs) abaLogs.classList.add('active');
 
-  // 2. Busca os dados no Python
+  // 2. Remove a cor laranja de todos os botões do menu e coloca no botão de Auditoria
+  document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
+  // Como o botão de auditoria não tem data-tab, selecionamos ele pelo texto
+  const botoes = document.querySelectorAll('.tab');
+  botoes.forEach(b => {
+    if (b.innerText.includes('Auditoria')) b.classList.add('active');
+  });
+
+  // 3. Busca os dados no Python
   try {
     const r = await fetch('/api/logs');
     const logs = await r.json();
@@ -733,7 +740,7 @@ async function abrirLogs() {
       return;
     }
 
-    // 3. Monta o HTML na tela
+    // 4. Monta o HTML na tela
     div.innerHTML = logs.map(l => {
       let corBorda = '#1e3a8a'; // Azul padrão
       if (l.acao.includes('Excluir')) corBorda = '#dc2626'; // Vermelho
