@@ -98,6 +98,7 @@ def init_db():
         registrado_por TEXT NOT NULL,
         data TEXT NOT NULL,
         excluida INTEGER DEFAULT 0,
+        anexo TEXT, 
         FOREIGN KEY(aluno_id) REFERENCES alunos(id)
     )""")
     
@@ -282,27 +283,37 @@ def atualizar_aluno(aid):
 # ===== API OCORRÊNCIAS =====
 @app.route("/api/ocorrencias", methods=["POST"])
 def registrar_ocorrencia():
-    data = request.get_json()
-    conn = get_db()
-    
-    data_manual = data.get("data")
-    hora_manual = data.get("hora", "")
+    # Agora recebemos via FormData, não JSON
+    aluno_id = request.form.get("aluno_id")
+    codigo = request.form.get("codigo")
+    descricao = request.form.get("descricao", "")
+    data_manual = request.form.get("data")
+    hora_manual = request.form.get("hora", "")
+    anexo = request.files.get("anexo") # 👈 PEGA O ARQUIVO
     
     if data_manual:
         data_formatada = f"{data_manual} às {hora_manual}" if hora_manual else data_manual
     else:
         data_formatada = datetime.now().strftime("%d/%m/%Y às %H:%M")
+
+    anexo_nome = None
+    if anexo and anexo.filename:
+        ext = os.path.splitext(anexo.filename)[1].lower()
+        # Aceita imagens e PDFs
+        if ext in [".png", ".jpg", ".jpeg", ".webp", ".pdf"]:
+            anexo_nome = f"{uuid.uuid4().hex}{ext}"
+            anexo.save(os.path.join(app.config["UPLOAD_FOLDER"], anexo_nome))
         
+    conn = get_db()
     conn.execute("""INSERT INTO ocorrencias 
-        (aluno_id, codigo, descricao, registrado_por, data)
-        VALUES (?,?,?,?,?)""",
-        (data["aluno_id"], data["codigo"], data.get("descricao", ""),
-         session.get("usuario_nome", "Desconhecido"), data_formatada))
+        (aluno_id, codigo, descricao, registrado_por, data, anexo)
+        VALUES (?,?,?,?,?,?)""",
+        (aluno_id, codigo, descricao,
+         session.get("usuario_nome", "Desconhecido"), data_formatada, anexo_nome))
     
     conn.commit()
     conn.close()
-    return jsonify({"ok": True})
-    
+    return jsonify({"ok": True})    
 @app.route("/api/ocorrencias/<int:aluno_id>")
 def listar_ocorrencias(aluno_id):
     conn = get_db()
