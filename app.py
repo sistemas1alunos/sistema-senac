@@ -562,10 +562,21 @@ def estatisticas():
         "codigos": [dict(r) for r in dados_codigos]
     })
 
-# ===== LIXEIRA =====
+# ===== LIXEIRA (COM VERIFICAÇÃO DE AUTOR) =====
 @app.route("/api/ocorrencias/<int:oid>", methods=["DELETE"])
 def mover_para_lixeira(oid):
     conn = get_db()
+    ocorrencia = conn.execute("SELECT * FROM ocorrencias WHERE id = ?", (oid,)).fetchone()
+    
+    if not ocorrencia:
+        conn.close()
+        return jsonify({"erro": "Ocorrência não encontrada."}), 404
+        
+    # REGRA DE SEGURANÇA: Só deixa apagar se quem está logado for o autor
+    if ocorrencia['registrado_por'] != session.get("usuario_nome"):
+        conn.close()
+        return jsonify({"erro": "Você só pode apagar ocorrências que você mesmo registrou."}), 403
+
     conn.execute("UPDATE ocorrencias SET excluida = 1 WHERE id = ?", (oid,))
     conn.commit()
     conn.close()
@@ -709,7 +720,6 @@ def editar_ocorrencia(oid):
     
     registrar_log(session.get("usuario_nome"), "Editar Ocorrência", f"Editou a ocorrência ID {oid}.")
     return jsonify({"ok": True})
-
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=5000)
