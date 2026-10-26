@@ -316,12 +316,15 @@ def criar_turma():
     if not nome or not qtd:
         return jsonify({"erro": "Preencha todos os campos"}), 400
 
+    # REGRA: Só aceita se terminar com A ou B
+    if not (nome.endswith('A') or nome.endswith('B')):
+        return jsonify({"erro": "A turma deve terminar com A (Manhã) ou B (Tarde). Ex: 1A, 2B."}), 400
+
+    # Define o turno com base na letra
     if nome.endswith('A'):
         turno = "Manhã"
-    elif nome.endswith('B'):
-        turno = "Tarde"
     else:
-        turno = data.get("turno", "Manhã")
+        turno = "Tarde"
         
     try:
         conn = get_db()
@@ -331,7 +334,8 @@ def criar_turma():
         return jsonify({"ok": True})
     except sqlite3.IntegrityError:
         return jsonify({"erro": "Essa turma já está cadastrada!"}), 400
-        
+
+
 @app.route("/api/turmas/<int:tid>", methods=["DELETE"])
 def deletar_turma(tid):
     conn = get_db()
