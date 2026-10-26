@@ -159,17 +159,28 @@ def login():
         if row:
             session["logado"] = True
             session["usuario_nome"] = row["cargo"]
+            
+            # LISTA DE QUEM TEM ACESSO TOTAL (ADMIN)
+            ADMINS = ["luciana", "erickacristina", "eriberto", "karol", "barbara"]
+            
+            if user in ADMINS:
+                session["permissao"] = "admin"
+            else:
+                session["permissao"] = "comum" # Inspetores e apoios
+                
             return redirect(url_for("dashboard"))
         else:
             erro = "Usuário ou senha incorretos!"
             
     return render_template("login.html", erro=erro)
-    
-@app.route("/logout")
-def logout():
-    session.clear()
-    return "", 204 
 
+@app.route("/api/permissoes")
+def permissoes():
+    return jsonify({
+        "nome": session.get("usuario_nome"),
+        "permissao": session.get("permissao", "comum")
+    })
+    
 @app.route("/")
 def dashboard():
     conn = get_db()
