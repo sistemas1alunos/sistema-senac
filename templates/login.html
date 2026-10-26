@@ -4,7 +4,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <link rel="manifest" href="/static/manifest.json">
   <meta name="theme-color" content="#0a1f44">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🔐</text></svg>">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏫</text></svg>">
   <meta charset="UTF-8">
   <title>🔐 Login • Senac 2026</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
@@ -20,15 +20,20 @@
     {% endif %}
     
     <form method="POST">
-      <input type="text" name="usuario" placeholder="Seu login" autofocus required>
+      <input type="text" name="usuario" placeholder="Seu login (ex: eliete)" autofocus required>
       
-      <!-- CAMPO DE SENHA COM O OLHINHO -->
-      <div class="senha-container">
-        <input type="password" name="senha" id="campoSenha" placeholder="Sua senha" required>
-        <span id="toggleSenha" class="olho-senha" onclick="mostrarSenha()">👁️</span>
+      <!-- CAMPO DE SENHA COM O OLHINHO (ESTILO DIRETO NA TAG) -->
+      <div style="position: relative; width: 100%; margin-bottom: 15px;">
+        <input type="password" name="senha" id="campoSenha" placeholder="Sua senha" required 
+               style="width: 100%; padding: 14px; padding-right: 45px; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 15px; margin-bottom: 0;">
+        
+        <span id="toggleSenha" onclick="mostrarSenha()" 
+              style="position: absolute; right: 15px; top: 50%; transform: translateY(-50%); cursor: pointer; font-size: 18px; opacity: 0.6; z-index: 10;">
+          👁️
+        </span>
       </div>
       
-      <button type="submit">Entrar</button>
+      <button type="submit" style="margin-top: 5px;">Entrar</button>
     </form>
     
     <p class="hint">Sessão expira ao sair da tela</p>
