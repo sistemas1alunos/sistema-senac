@@ -715,38 +715,48 @@ carregarTurmasNoSelect();
 
 // ===== LOGS DE AUDITORIA =====
 async function abrirLogs() {
+  // 1. Esconde todas as abas e mostra a de logs
   document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
   document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-  document.getElementById('logs').classList.add('active');
+  
+  const abaLogs = document.getElementById('logs');
+  if (abaLogs) abaLogs.classList.add('active');
 
-  const r = await fetch('/api/logs');
-  const logs = await r.json();
-  const div = document.getElementById('listaLogs');
+  // 2. Busca os dados no Python
+  try {
+    const r = await fetch('/api/logs');
+    const logs = await r.json();
+    const div = document.getElementById('listaLogs');
 
-  if (!logs.length) {
-    div.innerHTML = '<p style="color:#94a3b8;">Nenhuma alteração registrada até o momento.</p>';
-    return;
-  }
+    if (!logs || logs.length === 0) {
+      div.innerHTML = '<p style="color:#94a3b8;">Nenhuma alteração registrada até o momento.</p>';
+      return;
+    }
 
-  div.innerHTML = logs.map(l => {
-    // Define uma cor diferente para ações críticas (como exclusão)
-    let corBorda = '#1e3a8a'; // Azul padrão
-    if (l.acao.includes('Excluir')) corBorda = '#dc2626'; // Vermelho para exclusão
-    if (l.acao.includes('Lixeira')) corBorda = '#f59e0b'; // Laranja para lixeira
+    // 3. Monta o HTML na tela
+    div.innerHTML = logs.map(l => {
+      let corBorda = '#1e3a8a'; // Azul padrão
+      if (l.acao.includes('Excluir')) corBorda = '#dc2626'; // Vermelho
+      if (l.acao.includes('Lixeira') || l.acao.includes('Restaurar')) corBorda = '#f59e0b'; // Laranja
 
-    return `
-      <div class="hist-item" style="border-left-color: ${corBorda};">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-          <strong>${l.usuario}</strong>
-          <small>${l.data_hora}</small>
+      return `
+        <div class="hist-item" style="border-left-color: ${corBorda}; margin-bottom: 10px;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <strong>${l.usuario}</strong>
+            <small>${l.data_hora}</small>
+          </div>
+          <p style="font-size: 14px; margin-top: 8px;">
+            <strong>Ação:</strong> ${l.acao} <br>
+            <strong>Detalhes:</strong> ${l.detalhes}
+          </p>
         </div>
-        <p style="font-size: 14px; margin-top: 8px;">
-          <strong>Ação:</strong> ${l.acao} <br>
-          <strong>Detalhes:</strong> ${l.detalhes}
-        </p>
-      </div>
-    `;
-  }).join('');
+      `;
+    }).join('');
+    
+  } catch (error) {
+    console.error("Erro ao carregar logs", error);
+    document.getElementById('listaLogs').innerHTML = '<p style="color:red;">Erro ao carregar o histórico.</p>';
+  }
 }
 
 
