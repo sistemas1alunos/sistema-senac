@@ -73,29 +73,44 @@
       document.getElementById('modalSenha').style.display = 'none';
     }
 
-    async function salvarNovaSenha() {
+       async function salvarNovaSenha() {
       const login = document.getElementById('loginTroca').value;
       const senha_atual = document.getElementById('senhaAtual').value;
       const nova_senha = document.getElementById('novaSenha').value;
 
       if (!login || !senha_atual || !nova_senha) {
-        alert("Preencha todos os campos!");
+        alert("⚠️ Preencha todos os campos!");
         return;
       }
 
-      const r = await fetch('/api/trocar_senha', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ login, senha_atual, nova_senha })
-      });
+      // Muda o texto do botão para dar feedback visual
+      const btn = event.target;
+      const textoOriginal = btn.innerText;
+      btn.innerText = "⏳ Salvando...";
+      btn.disabled = true;
 
-      const res = await r.json();
+      try {
+        const r = await fetch('/api/trocar_senha', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ login, senha_atual, nova_senha })
+        });
 
-      if (r.ok) {
-        alert('✅ Senha alterada com sucesso! Use a nova senha para entrar.');
-        fecharModalSenha();
-      } else {
-        alert('❌ ' + (res.erro || 'Erro ao alterar senha.'));
+        const res = await r.json();
+
+        if (r.ok) {
+          alert('✅ Senha alterada com sucesso! Use a nova senha para entrar.');
+          fecharModalSenha();
+        } else {
+          alert('❌ ' + (res.erro || 'Erro ao alterar senha.'));
+        }
+      } catch (error) {
+        console.error(error);
+        alert('❌ Erro de conexão com o servidor. Verifique a internet.');
+      } finally {
+        // Volta o botão ao normal
+        btn.innerText = textoOriginal;
+        btn.disabled = false;
       }
     }
   </script>
