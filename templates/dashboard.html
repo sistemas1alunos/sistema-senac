@@ -254,7 +254,32 @@
     <div id="modalBody"></div>
   </div>
 </div>
+<!-- MODAL DE EDIÇÃO DE OCORRÊNCIA -->
+<div id="modalEdicao" style="display: none; position: fixed; inset: 0; background: rgba(10,31,68,.6); z-index: 1000; padding: 20px; backdrop-filter: blur(3px); align-items: center; justify-content: center;">
+  <div style="background: white; padding: 30px; border-radius: 16px; max-width: 500px; width: 100%;">
+    <h2 style="color: var(--marinho); margin-bottom: 20px; text-align: center;">Editar Ocorrência</h2>
+    
+    <input type="hidden" id="editOcorrenciaId">
+    
+    <label style="font-size: 13px; font-weight: bold; color: var(--marinho);">Código da Ocorrência</label>
+    <select id="editOcorrenciaCodigo" style="width: 100%; padding: 12px; margin-bottom: 15px; border: 2px solid #e2e8f0; border-radius: 8px;">
+      {% for k, v in ocorrencias.items() %}
+      <option value="{{ k }}">{{ k }} - {{ v['nome'] }}</option>
+      {% endfor %}
+    </select>
 
+    <label style="font-size: 13px; font-weight: bold; color: var(--marinho);">Data</label>
+    <input type="text" id="editOcorrenciaData" style="width: 100%; padding: 12px; margin-bottom: 15px; border: 2px solid #e2e8f0; border-radius: 8px;">
+    
+    <label style="font-size: 13px; font-weight: bold; color: var(--marinho);">Observações</label>
+    <textarea id="editOcorrenciaDescricao" style="width: 100%; padding: 12px; margin-bottom: 20px; border: 2px solid #e2e8f0; border-radius: 8px; min-height: 80px;"></textarea>
+    
+    <div style="display: flex; gap: 10px;">
+      <button onclick="fecharModalEdicao()" style="flex: 1; padding: 12px; background: #94a3b8; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;">Cancelar</button>
+      <button onclick="salvarEdicaoOcorrencia()" style="flex: 1; padding: 12px; background: var(--laranja); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;">Salvar</button>
+    </div>
+  </div>
+</div>
 <script id="dados-ocorrencias" type="application/json">
   {{ ocorrencias | tojson }}
 </script>
