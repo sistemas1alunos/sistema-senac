@@ -1,52 +1,283 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏫</text></svg>">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <link rel="manifest" href="/static/manifest.json">
   <meta name="theme-color" content="#0a1f44">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22></text></svg>">
   <meta charset="UTF-8">
-  <title>🔐 Login • Senac 2026</title>
+  <title>📝 Painel • Senac 2026</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
-<body class="login-body">
-  <div class="login-card">
-    <div class="logo">🏫 SENAC <span>2026</span></div>
-    <h1>Registro de Ocorrências</h1>
-    <p class="sub">Médio Técnico • Acesso Restrito</p>
+<body>
+<header class="topbar">
+  <div class="logo">🏫 SENAC <span>2026</span></div>
+  <nav>
+    <button class="tab active" data-tab="alunos">👥 Alunos</button>
+    <button class="tab" data-tab="turmas">🏫 Turmas</button>
+    <button class="tab" data-tab="cadastro">➕ Cadastrar Aluno</button>
+    <button class="tab" data-tab="ocorrencias">📋 Registrar</button>
+    <button class="tab" onclick="abrirLogs()">🕵️ Auditoria</button>
+    <button class="tab" data-tab="mural">📊 Mural Geral</button>
+    <button class="tab" onclick="abrirLixeira()">🗑 Lixeira</button>
     
-    {% if erro %}
-      <div class="erro">{{ erro }}</div>
-    {% endif %}
+    <!-- SINO DE NOTIFICAÇÃO -->
+    <div style="position: relative; display: inline-block; margin-left: 10px;">
+      <button onclick="verNotificacoes()" style="background:none; border:none; font-size: 20px; cursor: pointer;">🔔</button>
+      <span id="badge-notif" style="display:none; position: absolute; top: -5px; right: -10px; background: red; color: white; border-radius: 50%; padding: 2px 6px; font-size: 10px; font-weight: bold;">0</span>
+    </div>
     
-    <form method="POST">
-      <input type="text" name="usuario" placeholder="Seu login" autofocus required>
-      
-      <!-- CAMPO DE SENHA COM O OLHINHO -->
-      <div class="senha-container">
-        <input type="password" name="senha" id="campoSenha" placeholder="Sua senha" required>
-        <span id="toggleSenha" class="olho-senha" onclick="mostrarSenha()">👁️</span>
-      </div>
-      
-      <button type="submit">Entrar</button>
-    </form>
-    
-    <p class="hint">Sessão expira ao sair da tela</p>
-  </div>
+    <span style="color: #cbd5e1; font-size: 14px; margin-left: 15px;">
+        Olá, {{ session.usuario_nome if session.usuario_nome else 'Usuário' }}!
+    </span>
+    <a href="#" onclick="sairDoSistema(event)" class="sair">Sair</a>
+  </nav>
+</header>
 
-  <script>
-    function mostrarSenha() {
-      const inputSenha = document.getElementById('campoSenha');
-      const icone = document.getElementById('toggleSenha');
+<main>
+  <!-- ABA ALUNOS -->
+  <section id="alunos" class="tab-content active">
+    <div class="filtros">
+      <input type="text" id="busca" placeholder="🔍 Buscar aluno por nome...">
+      <select id="filtroTurma">
+        <option value="">Todas as turmas</option>
+        <option value="1A">1A</option>
+        <option value="1B">1B</option>
+        <option value="2A">2A</option>
+        <option value="2B">2B</option>
+        {% for t in turmas %}
+          {% if t not in ['1A', '1B', '2A', '2B'] %}
+            <option>{{ t }}</option>
+          {% endif %}
+        {% endfor %}
+      </select>
+      <select id="filtroTurno">
+        <option value="">Todos os turnos</option>
+        <option value="Manhã">Matutino (Manhã)</option>
+        <option value="Tarde">Vespertino (Tarde)</option>
+      </select>
+    </div>
+    
+    <div id="viewTurmas" class="grid-turmas"></div>
+    
+    <div id="viewAlunos" class="grid-alunos" style="display: none;">
+      <div class="header-turma">
+        <button onclick="voltarTurmas()" class="btn-voltar">← Voltar para Turmas</button>
+        <h3 id="tituloTurmaAtual"></h3>
+      </div>
+      <div id="listaAlunos"></div>
+    </div>
+  </section>
+
+  <!-- ABA TURMAS -->
+  <section id="turmas" class="tab-content">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
+      <h2 style="margin: 0;">Gerenciar Turmas</h2>
       
-      if (inputSenha.type === "password") {
-        inputSenha.type = "text";
-        icone.innerText = "🙈";
-      } else {
-        inputSenha.type = "password";
-        icone.innerText = "👁️";
-      }
-    }
-  </script>
+      <div style="display: flex; gap: 10px;">
+        <button onclick="abrirFinalizarAno()" style="background: #7c3aed; color: white; padding: 10px 20px; border-radius: 8px; border: none; cursor: pointer; font-weight: bold;">
+          📅 Finalizar Ano Letivo
+        </button>
+        <a href="/api/backup" style="background: #475569; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: bold; display: flex; align-items: center; gap: 8px;">
+          💾 Baixar Backup
+        </a>
+      </div>
+    </div>
+    
+    <div class="form-card" style="margin-bottom: 30px; max-width: 100%; flex-direction: row; align-items: flex-end; flex-wrap: wrap;">
+      <div style="flex: 1; min-width: 150px;">
+        <label style="font-size: 13px; font-weight: bold; color: var(--marinho);">Nome da Turma</label>
+        <input type="text" id="novaTurmaNome" placeholder="Obrigatório A ou B" required>
+      </div>
+      <div style="flex: 1; min-width: 150px;">
+        <label style="font-size: 13px; font-weight: bold; color: var(--marinho);">Qtd. de Alunos</label>
+        <input type="number" id="novaTurmaQtd" placeholder="Ex: 40" min="1" required>
+      </div>
+      <button onclick="cadastrarNovaTurma()" style="width: auto; padding: 13px 25px;">➕ Criar Turma</button>
+    </div>
+  
+    <div id="listaTurmas" class="grid-turmas-admin"></div>
+  </section>
+
+  <!-- ABA CADASTRO -->
+  <section id="cadastro" class="tab-content">
+    <h2 style="text-align: center; max-width: 600px; margin: 0 auto 20px auto;">Cadastrar Aluno</h2>
+    <form id="formAluno" onsubmit="return false;" enctype="multipart/form-data" class="form-card">
+      <input type="text" name="nome" placeholder="Nome completo" required>
+      
+      <select name="turma" id="selectTurmaCadastro" required>
+        <option value="">Carregando turmas...</option>
+      </select>
+      
+      <label class="upload-label" style="display: flex; flex-direction: column; gap: 5px;">
+        <span>📷 Foto do aluno</span>
+        <input type="file" name="foto" id="inputFoto" accept="image/*">
+        <span id="nomeArquivo" style="font-size: 12px; color: #059669; font-weight: bold; margin-top: 5px;"></span>
+      </label>
+      <button type="submit">Cadastrar Aluno</button>
+    </form>
+  </section>
+
+  <!-- ABA OCORRÊNCIAS -->
+  <section id="ocorrencias" class="tab-content">
+    <h2>Registrar Ocorrência</h2>
+    <form id="formOcorrencia" class="form-card">
+      
+      <div class="autocomplete-container">
+        <input type="text" id="buscaAlunoOcorrencia" placeholder="🔍 Digite o nome do aluno..." autocomplete="off" required>
+        <input type="hidden" id="selAluno" required>
+        <div id="sugestoesAluno" class="autocomplete-lista"></div>
+      </div>
+
+      <select id="selCodigo" required>
+          <option value="">Tipo de ocorrência...</option>
+          {% for k, v in ocorrencias.items() %}
+          <option value="{{ k }}">{{ k }} - {{ v['nome'] }}</option>
+          {% endfor %}
+      </select>
+      
+      <div style="display: flex; gap: 10px;">
+        <div style="flex: 1;">
+          <label style="font-size: 13px; font-weight: bold; color: var(--marinho); display: block; margin-bottom: 5px;">Data da Ocorrência</label>
+          <input type="date" id="dataOcorrencia" required style="width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 10px;">
+        </div>
+        <div style="flex: 1;">
+          <label style="font-size: 13px; font-weight: bold; color: var(--marinho); display: block; margin-bottom: 5px;">Hora (Opcional)</label>
+          <input type="time" id="horaOcorrencia" style="width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 10px;">
+        </div>
+      </div>
+
+      <div>
+        <label style="font-size: 13px; font-weight: bold; color: var(--marinho); display: block; margin-bottom: 5px;">📎 Anexar Foto/Arquivo (Opcional)</label>
+        <input type="file" id="anexoOcorrencia" name="anexo" accept="image/*, .pdf" style="width: 100%; padding: 10px; border: 2px dashed #cbd5e1; border-radius: 10px; background: #f8fafc; cursor: pointer;">
+      </div>
+
+      <textarea id="descricao" placeholder="Observações (opcional)"></textarea>
+      <button type="submit">Registrar</button>
+    </form>
+
+    <h3>Histórico</h3>
+    <div id="historico"></div>
+
+    <div class="legenda">
+      <h3>🔖 Legenda de Códigos</h3>
+      <div class="legenda-grid">
+        {% for item in legenda %}
+          <div class="legenda-item">
+            <span class="badge badge-{{ item.codigo|lower }}">{{ item.codigo }}</span> 
+            <span class="legenda-texto"><strong>{{ item.codigo }}</strong> - {{ item.nome }}</span>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+
+  <!-- ABA MURAL GERAL (COM GRÁFICOS) -->
+  <section id="mural" class="tab-content">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 20px;">
+      <h2>Mural Geral de Ocorrências</h2>
+      <div style="display: flex; gap: 10px;">
+        <a href="/api/relatorio_pdf" target="_blank" style="background: #059669; color: white; padding: 10px 20px; border-radius: 8px; font-weight: bold; text-decoration: none;">📄 Baixar PDF</a>
+        <a href="/api/relatorio_excel" target="_blank" style="background: #1e7145; color: white; padding: 10px 20px; border-radius: 8px; font-weight: bold; text-decoration: none;">📊 Baixar Excel</a>
+      </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 30px;">
+      <div style="background: white; padding: 20px; border-radius: 16px; box-shadow: 0 4px 15px rgba(10,31,68,0.08);">
+        <h3 style="text-align: center; color: var(--marinho); margin-bottom: 15px;">Ocorrências por Turma</h3>
+        <div style="position: relative; height: 250px; width: 100%;">
+          <canvas id="graficoTurmas"></canvas>
+        </div>
+      </div>
+
+      <div style="background: white; padding: 20px; border-radius: 16px; box-shadow: 0 4px 15px rgba(10,31,68,0.08);">
+        <h3 style="text-align: center; color: var(--marinho); margin-bottom: 15px;">Tipos de Ocorrências</h3>
+        <div style="position: relative; height: 250px; width: 100%;">
+          <canvas id="graficoCodigos"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="filtros" style="margin-top: 20px;">
+      <input type="date" id="filtroData" title="Data Inicial">
+      <select id="filtroTurmaMural">
+        <option value="">Todas as Turmas</option>
+        {% for t in turmas %}<option>{{ t }}</option>{% endfor %}
+      </select>
+      <input type="text" id="filtroAlunoMural" placeholder="🔍 Filtrar por nome do aluno...">
+      <button onclick="filtrarMural()" style="background: var(--marinho); color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer;">Filtrar</button>
+    </div>
+
+    <div id="listaMural" style="margin-top: 20px;"></div>
+  </section>
+
+  <!-- ABA FINALIZAR ANO -->
+  <section id="finalizar" class="tab-content">
+    <h2>Finalizar Ano Letivo</h2>
+    <p style="color: #64748b; margin-bottom: 20px;">
+      Marque quem foi <strong>aprovado</strong>. Os alunos do 3º ano aprovados serão movidos para "FORMADO". Os reprovados permanecerão na mesma turma.
+    </p>
+    
+    <div id="listaAprovacao" style="margin-top: 20px;"></div>
+    
+    <div style="display: flex; gap: 10px; margin-top: 30px;">
+      <button onclick="salvarProgressao()" style="background: #059669; color: white; padding: 14px 30px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; font-size: 16px;">
+        ✅ Confirmar Fim de Ano
+      </button>
+    </div>
+  </section>
+
+  <!-- ABA DE LOGS (AUDITORIA) -->
+  <section id="logs" class="tab-content">
+    <h2>🕵️ Histórico de Alterações (Auditoria)</h2>
+    <p style="color: #64748b; margin-bottom: 20px;">Aqui você pode ver exatamente quem alterou ou apagou algo no sistema e quando.</p>
+    <div id="listaLogs" style="margin-top: 20px;"></div>
+  </section>
+</main>
+
+<!-- MODAL DO ALUNO -->
+<div id="modal" class="modal">
+  <div class="modal-content">
+    <span class="close" onclick="fecharModal()">&times;</span>
+    <div id="modalBody"></div>
+  </div>
+</div>
+
+<!-- MODAL DE EDIÇÃO DE OCORRÊNCIA -->
+<div id="modalEdicao" style="display: none; position: fixed; inset: 0; background: rgba(10,31,68,.6); z-index: 1000; padding: 20px; backdrop-filter: blur(3px); align-items: center; justify-content: center;">
+  <div style="background: white; padding: 30px; border-radius: 16px; max-width: 500px; width: 100%;">
+    <h2 style="color: var(--marinho); margin-bottom: 20px; text-align: center;">Editar Ocorrência</h2>
+    
+    <input type="hidden" id="editOcorrenciaId">
+    
+    <label style="font-size: 13px; font-weight: bold; color: var(--marinho);">Código da Ocorrência</label>
+    <select id="editOcorrenciaCodigo" style="width: 100%; padding: 12px; margin-bottom: 15px; border: 2px solid #e2e8f0; border-radius: 8px;">
+      {% for k, v in ocorrencias.items() %}
+      <option value="{{ k }}">{{ k }} - {{ v['nome'] }}</option>
+      {% endfor %}
+    </select>
+
+    <label style="font-size: 13px; font-weight: bold; color: var(--marinho);">Data</label>
+    <input type="text" id="editOcorrenciaData" style="width: 100%; padding: 12px; margin-bottom: 15px; border: 2px solid #e2e8f0; border-radius: 8px;">
+    
+    <label style="font-size: 13px; font-weight: bold; color: var(--marinho);">Observações</label>
+    <textarea id="editOcorrenciaDescricao" style="width: 100%; padding: 12px; margin-bottom: 20px; border: 2px solid #e2e8f0; border-radius: 8px; min-height: 80px;"></textarea>
+    
+    <div style="display: flex; gap: 10px;">
+      <button onclick="fecharModalEdicao()" style="flex: 1; padding: 12px; background: #94a3b8; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;">Cancelar</button>
+      <button onclick="salvarEdicaoOcorrencia()" style="flex: 1; padding: 12px; background: var(--laranja); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<script id="dados-ocorrencias" type="application/json">
+  {{ ocorrencias | tojson }}
+</script>
+<script>
+  const OCORRENCIAS = JSON.parse(document.getElementById('dados-ocorrencias').textContent);
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
 </html>
