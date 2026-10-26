@@ -108,6 +108,30 @@ def init_db():
         detalhes TEXT,
         data_hora TEXT NOT NULL
     )""")
+
+    # 👇 CORRIGIDO AQUI (Removido o espaço extra no início) 👇
+    c.execute("""CREATE TABLE IF NOT EXISTS usuarios (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        login TEXT NOT NULL UNIQUE,
+        senha TEXT NOT NULL,
+        cargo TEXT NOT NULL
+    )""")
+    
+    # Insere os usuários padrão se a tabela estiver vazia
+    c.execute("SELECT COUNT(*) FROM usuarios")
+    if c.fetchone()[0] == 0:
+        usuarios_padrao = [
+            ("eriberto", "!Sen@c.E1", "Pedagogo Eriberto"),
+            ("karol", "!Sen@c.K2", "Psicopedagoga Karoline"),
+            ("barbara", "!Sen@c.B3", "Psicóloga Barbara"),
+            ("eliete", "!Sen@c.E4", "Inspetora Eliete"),
+            ("ericasantos", "!Sen@c.E5", "Apoio de sala Erica"),
+            ("luciana", "!Sen@c.lu", "Coordenadora Luciana"),
+            ("yasnaya", "!Sen@c.Yas", "Apoio de sala Yasnaya"),
+            ("erickacristina", "!Sen@c.Ec", "Coordenadora Erika Cristina"),
+            ("cayre", "!Sen@c.C6", "Cayre")
+        ]
+        c.executemany("INSERT INTO usuarios (login, senha, cargo) VALUES (?, ?, ?)", usuarios_padrao)
     
     conn.commit()
     conn.close()
@@ -144,15 +168,19 @@ def login():
         user = request.form.get("usuario", "").strip().lower()
         senha = request.form.get("senha", "")
         
-        if user in USUARIOS and USUARIOS[user]["senha"] == senha:
+        conn = get_db()
+        row = conn.execute("SELECT * FROM usuarios WHERE login = ? AND senha = ?", (user, senha)).fetchone()
+        conn.close()
+        
+        if row:
             session["logado"] = True
-            session["usuario_nome"] = USUARIOS[user]["cargo"]
+            session["usuario_nome"] = row["cargo"]
             return redirect(url_for("dashboard"))
         else:
             erro = "Usuário ou senha incorretos!"
             
     return render_template("login.html", erro=erro)
-
+    
 @app.route("/logout")
 def logout():
     session.clear()
@@ -645,6 +673,29 @@ def api_logs():
     rows = conn.execute("SELECT * FROM logs ORDER BY id DESC").fetchall()
     conn.close()
     return jsonify([dict(r) for r in rows])
+
+
+
+@app.route("/api/trocar_senha", methods=["POST"])
+def trocar_senha():
+    data = request.get_json()
+    login = data.get("login", "").strip().lower()
+    senha_atual = data.get("senha_atual", "")
+    nova_senha = data.get("nova_senha", "")
+
+    conn = get_db()
+    user = conn.execute("SELECT * FROM usuarios WHERE login = ? AND senha = ?", (login, senha_atual)).fetchone()
+    
+    if user:
+        conn.execute("UPDATE usuarios SET senha = ? WHERE login = ?", (nova_senha, login))
+        conn.commit()
+        conn.close()
+        return jsonify({"ok": True, "msg": "Senha alterada com sucesso!"})
+    else:
+        conn.close()
+        return jsonify({"erro": "Login ou senha atual incorretos."}), 400
+
+
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=5000)
