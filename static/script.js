@@ -447,7 +447,8 @@ async function verAluno(id, nome) {
     html += '<p style="color:#94a3b8;margin:20px 0;">Nenhuma ocorrência registrada.</p>';
   } else {
     // Pega o nome de quem está logado
-    const usuarioLogado = "{{ session.usuario_nome }}";
+    const userInfo = document.getElementById('user-info');
+    const usuarioLogado = userInfo ? userInfo.getAttribute('data-nome') : '';
 
     html += lista.map(o => {
       const oc = OCORRENCIAS[o.codigo] || { nome: o.codigo, cor: '#64748b' };
@@ -565,13 +566,14 @@ async function carregarMural() {
     return;
   }
 
-  // Pega o nome de quem está logado
-  const usuarioLogado = "{{ session.usuario_nome }}";
+  // 👇 O SEGREDO ESTÁ AQUI: Pega o nome direto da tag HTML do topo
+  const userInfo = document.getElementById('user-info');
+  const usuarioLogado = userInfo ? userInfo.getAttribute('data-nome') : '';
 
   div.innerHTML = lista.map(o => {
     const oc = OCORRENCIAS[o.codigo] || { nome: o.codigo, cor: '#64748b' };
     
-    // Verifica se quem está logado é o autor da ocorrência
+    // Verifica se o nome de quem registrou é igual ao nome de quem está logado
     const podeEditar = (o.registrado_por === usuarioLogado);
 
     return `
@@ -584,7 +586,7 @@ async function carregarMural() {
         <small>Registrado por: ${o.registrado_por}</small>
         ${o.descricao ? `<p style="margin-top:8px; font-size:13px;">${o.descricao}</p>` : ''}
         
-        <!-- BOTÕES DE EDITAR E APAGAR (SÓ APARECEM SE FOR O AUTOR) -->
+        <!-- BOTÕES DE EDITAR E APAGAR -->
         <div style="position: absolute; right: 10px; top: 10px; display: flex; gap: 8px;">
           ${podeEditar ? `<button onclick="abrirModalEdicao(${o.id}, '${o.codigo}', '${o.data}', '${o.descricao.replace(/'/g,"\\'")}')" style="background: none; border: none; cursor: pointer; font-size: 16px;" title="Editar">✏️</button>` : ''}
           ${podeEditar ? `<button onclick="apagarOcorrencia(${o.id})" style="background: none; border: none; color: #dc2626; cursor: pointer; font-size: 16px;" title="Apagar">🗑</button>` : ''}
@@ -598,6 +600,7 @@ async function carregarMural() {
     document.getElementById('badge-notif').style.display = 'none';
   }
 }
+
 function filtrarMural() {
   carregarMural();
 }
