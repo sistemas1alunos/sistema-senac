@@ -42,7 +42,7 @@ document.getElementById('formAluno').addEventListener('submit', async (e) => {
       const nomeArquivo = document.getElementById('nomeArquivo');
       if (nomeArquivo) nomeArquivo.innerText = '';
       if (typeof carregarTurmas === 'function') carregarTurmas();
-      carregarTurmasNoSelect(); // Atualiza a lista caso tenha criado turma nova
+      carregarTurmasNoSelect(); 
     } else {
       const err = await r.json();
       alert('❌ Erro: ' + (err.erro || 'Falha ao cadastrar'));
@@ -84,7 +84,6 @@ async function carregarTurmasAdmin() {
         <button onclick="excluirTurma(${t.id})" style="background:none; border:none; color:#dc2626; cursor:pointer; font-size:20px; width:auto; padding:0;" title="Excluir turma">🗑</button>
       </div>
       
-      <!-- Mostra o turno apenas como texto -->
       <p style="font-size: 14px; color: #64748b; margin-bottom: 15px;">Turno: <strong>${t.turno}</strong></p>
       
       <label>Quantidade de Alunos</label>
@@ -104,7 +103,6 @@ async function cadastrarNovaTurma() {
     return;
   }
 
-  // REGRA NO NAVEGADOR: Só aceita A ou B
   if (!nome.endsWith('A') && !nome.endsWith('B')) {
     alert('⚠️ A turma deve terminar com "A" (para Manhã) ou "B" (para Tarde). Exemplo: 1A, 2B.');
     return;
@@ -122,7 +120,7 @@ async function cadastrarNovaTurma() {
     document.getElementById('novaTurmaQtd').value = '';
     carregarTurmasAdmin();
     carregarTurmas(); 
-    carregarTurmasNoSelect(); // Atualiza a lista no cadastro de aluno
+    carregarTurmasNoSelect(); 
   } else {
     const err = await r.json();
     alert('❌ ' + (err.erro || 'Erro ao criar turma'));
@@ -340,7 +338,6 @@ document.getElementById('formOcorrencia').addEventListener('submit', async (e) =
     dataFormatada = `${dia}/${mes}/${ano}`;
   }
 
-  // Monta o FormData para enviar a foto
   const fd = new FormData();
   fd.append("aluno_id", alunoId);
   fd.append("codigo", document.getElementById('selCodigo').value);
@@ -355,7 +352,7 @@ document.getElementById('formOcorrencia').addEventListener('submit', async (e) =
   try {
     const r = await fetch('/api/ocorrencias', {
       method: 'POST', 
-      body: fd // Enviando como FormData
+      body: fd 
     });
     
     if (r.ok) {
@@ -365,14 +362,13 @@ document.getElementById('formOcorrencia').addEventListener('submit', async (e) =
       inputBuscaAluno.value = "";
       inputHiddenAluno.value = "";
       
-      // Reseta a data para hoje
       const hoje = new Date();
       const ano = hoje.getFullYear();
       const mes = String(hoje.getMonth() + 1).padStart(2, '0');
       const dia = String(hoje.getDate()).padStart(2, '0');
       document.getElementById('dataOcorrencia').value = `${ano}-${mes}-${dia}`;
 
-      carregarHistorico(alunoId); // Alterado de payload.aluno_id para alunoId
+      carregarHistorico(alunoId); 
       
       if (turmaAtual === "") carregarTurmas();
       else carregarAlunos();
@@ -403,9 +399,7 @@ async function carregarHistorico(alunoId) {
       <span class="badge" style="background:${oc.cor}">${o.codigo}</span>
       <strong>${oc.nome}</strong><br>
       <small>${o.registrado_por} • ${o.data}</small>
-      <!-- BOTÃO DO DESCRIÇÃO -->
       ${o.descricao ? `<p style="margin-top:8px;font-size:13px;">${o.descricao}</p>` : ''}
-      <!-- BOTÃO DO ANEXO -->
         ${o.anexo ? `<a href="/uploads/${o.anexo}" target="_blank" style="display: inline-block; margin-top: 10px; font-size: 12px; font-weight: bold; color: var(--laranja); text-decoration: none;">📎 Ver Anexo</a>` : ''}
     </div>`;
   }).join('');
@@ -424,16 +418,26 @@ async function verAluno(id, nome) {
   if (!lista.length) {
     html += '<p style="color:#94a3b8;margin:20px 0;">Nenhuma ocorrência registrada.</p>';
   } else {
+    // Pega o nome de quem está logado
+    const usuarioLogado = "{{ session.usuario_nome }}";
+
     html += lista.map(o => {
       const oc = OCORRENCIAS[o.codigo] || { nome: o.codigo, cor: '#64748b' };
-      return `<div class="hist-item" style="border-left-color:${oc.cor}; position: relative; padding-right: 40px;">
+      
+      // Verifica se quem está logado é o dono da ocorrência
+      const podeEditar = (o.registrado_por === usuarioLogado);
+
+      return `<div class="hist-item" style="border-left-color:${oc.cor}; position: relative; padding-right: 80px;">
         <span class="badge" style="background:${oc.cor}">${o.codigo}</span>
         <strong>${oc.nome}</strong><br>
         <small>${o.registrado_por} • ${o.data}</small>
         ${o.descricao ? `<p style="margin-top:8px;font-size:13px;">${o.descricao}</p>` : ''}
         
-        <!-- BOTÃO DE APAGAR A OCORRÊNCIA -->
-        <button onclick="apagarOcorrencia(${o.id})" style="position: absolute; right: 10px; top: 10px; background: none; border: none; color: #dc2626; cursor: pointer; font-size: 18px;" title="Apagar Ocorrência">🗑</button>
+        <!-- BOTÕES (SÓ APARECEM SE FOR O AUTOR) -->
+        <div style="position: absolute; right: 10px; top: 10px; display: flex; gap: 8px;">
+          ${podeEditar ? `<button onclick="abrirModalEdicao(${o.id}, '${o.codigo}', '${o.data}', '${o.descricao.replace(/'/g,"\\'")}')" style="background: none; border: none; cursor: pointer; font-size: 16px;" title="Editar">✏️</button>` : ''}
+          ${podeEditar ? `<button onclick="apagarOcorrencia(${o.id})" style="background: none; border: none; color: #dc2626; cursor: pointer; font-size: 16px;" title="Apagar">🗑</button>` : ''}
+        </div>
       </div>`;
     }).join('');
   }
@@ -461,6 +465,47 @@ async function apagarOcorrencia(id) {
     else carregarAlunos();
   } else {
     alert('❌ Erro ao apagar ocorrência.');
+  }
+}
+
+// ===== MODAL DE EDIÇÃO DE OCORRÊNCIA =====
+function abrirModalEdicao(id, codigo, data, descricao) {
+  document.getElementById('editOcorrenciaId').value = id;
+  document.getElementById('editOcorrenciaCodigo').value = codigo;
+  document.getElementById('editOcorrenciaData').value = data;
+  document.getElementById('editOcorrenciaDescricao').value = descricao;
+  
+  document.getElementById('modalEdicao').style.display = 'flex';
+}
+
+function fecharModalEdicao() {
+  document.getElementById('modalEdicao').style.display = 'none';
+}
+
+async function salvarEdicaoOcorrencia() {
+  const id = document.getElementById('editOcorrenciaId').value;
+  const codigo = document.getElementById('editOcorrenciaCodigo').value;
+  const data = document.getElementById('editOcorrenciaData').value;
+  const descricao = document.getElementById('editOcorrenciaDescricao').value;
+
+  const payload = { codigo, data, descricao };
+
+  const r = await fetch(`/api/ocorrencias/${id}/editar`, {
+    method: 'PUT',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(payload)
+  });
+
+  const res = await r.json();
+
+  if (r.ok) {
+    alert('✅ Ocorrência editada com sucesso!');
+    fecharModalEdicao();
+    // Recarrega a tela para atualizar a lista
+    if (turmaAtual === "") carregarTurmas();
+    else carregarAlunos();
+  } else {
+    alert('❌ ' + (res.erro || 'Erro ao editar.'));
   }
 }
 
@@ -723,21 +768,17 @@ carregarTurmasNoSelect();
 
 // ===== LOGS DE AUDITORIA =====
 async function abrirLogs() {
-  // 1. Esconde todas as abas
   document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
   
-  // 2. Mostra a aba de logs
   const abaLogs = document.getElementById('logs');
   if (abaLogs) abaLogs.classList.add('active');
 
-  // 3. Deixa o botão de Auditoria laranja
   document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
   const botoes = document.querySelectorAll('.tab');
   botoes.forEach(b => {
     if (b.innerText.includes('Auditoria')) b.classList.add('active');
   });
 
-  // 4. Busca os dados e monta a tela
   try {
     const r = await fetch('/api/logs');
     const logs = await r.json();
@@ -775,7 +816,6 @@ async function abrirLogs() {
     if (div) div.innerHTML = '<p style="color:red;">Erro ao carregar o histórico.</p>';
   }
 }
-
 
 // ===== INICIALIZAÇÃO DO SISTEMA =====
 setInterval(checarNotificacoes, 30000);
