@@ -1,3 +1,30 @@
+// ===== VERIFICAÇÃO DE PERMISSÃO =====
+const userInfo = document.getElementById('user-info');
+const userPermissao = userInfo ? userInfo.getAttribute('data-permissao') : 'comum';
+
+function esconderParaComuns() {
+  if (userPermissao !== 'admin') {
+    // Esconde a aba de Turmas
+    const tabTurmas = document.querySelector('[data-tab="turmas"]');
+    if (tabTurmas) tabTurmas.style.display = 'none';
+    
+    // Esconde a aba de Cadastrar Aluno
+    const tabCadastro = document.querySelector('[data-tab="cadastro"]');
+    if (tabCadastro) tabCadastro.style.display = 'none';
+    
+    // Esconde o botão de Finalizar Ano (dentro da aba turmas)
+    const btnFinalizar = document.querySelector('button[onclick="abrirFinalizarAno()"]');
+    if (btnFinalizar) btnFinalizar.style.display = 'none';
+    
+    // Esconde o botão de Excluir Aluno (dentro do modal)
+    const btnExcluirAluno = document.querySelector('button[onclick^="excluirAluno"]');
+    if (btnExcluirAluno) btnExcluirAluno.style.display = 'none';
+  }
+}
+
+// Executa assim que a página carrega
+document.addEventListener('DOMContentLoaded', esconderParaComuns);
+
 // ===== TABS E NAVEGAÇÃO =====
 document.querySelectorAll('.tab').forEach(btn => {
   btn.addEventListener('click', (e) => {
@@ -23,6 +50,7 @@ document.querySelectorAll('.tab').forEach(btn => {
     }
   });
 });
+
 
 // ===== CADASTRAR ALUNO =====
 document.getElementById('formAluno').addEventListener('submit', async (e) => {
