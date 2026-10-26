@@ -244,7 +244,7 @@ def excluir_aluno(aid):
     conn.commit()
     conn.close()
     
-     registrar_log(session.get("usuario_nome"), "Excluir Aluno", f"Apagou o aluno ID {aid} e suas ocorrências.")
+        registrar_log(session.get("usuario_nome"), "Excluir Aluno", f"Apagou o aluno ID {aid} e suas ocorrências.")
     
     return jsonify({"ok": True})
 
