@@ -402,7 +402,6 @@ def todas_ocorrencias():
 @app.route("/api/relatorio_pdf")
 def gerar_relatorio_pdf():
     conn = get_db()
-    # AQUI: Filtra as que não estão na lixeira
     sql = """
         SELECT o.*, a.nome as aluno_nome, a.turma as aluno_turma, a.turno 
         FROM ocorrencias o
@@ -413,6 +412,10 @@ def gerar_relatorio_pdf():
     rows = conn.execute(sql).fetchall()
     conn.close()
 
+    # Pega o nome de quem está logado
+    quem_emitiu = session.get("usuario_nome", "Sistema")
+
+    # Monta o HTML do relatório
     html_content = """
     <html>
     <head>
@@ -431,7 +434,10 @@ def gerar_relatorio_pdf():
     <body>
         <div class="header">
             <h1>🏫 SENAC 2026 - Relatório de Ocorrências</h1>
-            <div class="data">Emitido em: """ + datetime.now().strftime('%d/%m/%Y às %H:%M') + """</div>
+            <div class="data">
+                Emitido em: """ + datetime.now().strftime('%d/%m/%Y às %H:%M') + """ <br>
+                <strong>Emitido por:</strong> """ + quem_emitiu + """
+            </div>
         </div>
     """
 
@@ -455,6 +461,7 @@ def gerar_relatorio_pdf():
     response.headers['Content-Type'] = 'application/pdf'
     response.headers['Content-Disposition'] = 'attachment; filename=relatorio_senac.pdf'
     return response
+
 
 # ===== ROTA PARA BAIXAR BACKUP DO BANCO =====
 @app.route("/api/backup")
