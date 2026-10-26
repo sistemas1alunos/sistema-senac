@@ -88,7 +88,7 @@ async function carregarTurmasAdmin() {
 }
 
 async function cadastrarNovaTurma() {
-  const nome = document.getElementById('novaTurmaNome').value;
+  const nome = document.getElementById('novaTurmaNome').value.trim().toUpperCase();
   const qtd = document.getElementById('novaTurmaQtd').value;
 
   if (!nome || !qtd) {
@@ -96,7 +96,12 @@ async function cadastrarNovaTurma() {
     return;
   }
 
-  // O Python agora deduz o turno automaticamente pela letra A ou B
+  // REGRA NO NAVEGADOR: Só aceita A ou B
+  if (!nome.endsWith('A') && !nome.endsWith('B')) {
+    alert('⚠️ A turma deve terminar com "A" (para Manhã) ou "B" (para Tarde). Exemplo: 1A, 2B.');
+    return;
+  }
+
   const r = await fetch('/api/turmas', {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
@@ -109,7 +114,7 @@ async function cadastrarNovaTurma() {
     document.getElementById('novaTurmaQtd').value = '';
     carregarTurmasAdmin();
     carregarTurmas(); 
-    carregarTurmasNoSelect(); // Atualiza a lista do cadastro de aluno
+    carregarTurmasNoSelect(); // Atualiza a lista no cadastro de aluno
   } else {
     const err = await r.json();
     alert('❌ ' + (err.erro || 'Erro ao criar turma'));
