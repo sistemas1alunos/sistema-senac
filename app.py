@@ -672,25 +672,34 @@ def api_logs():
 # ===== ROTA PARA TROCAR SENHA =====
 @app.route("/api/trocar_senha", methods=["POST"])
 def trocar_senha():
-    data = request.get_json()
-    login = data.get("login", "").strip().lower()
-    senha_atual = data.get("senha_atual", "")
-    nova_senha = data.get("nova_senha", "")
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({"erro": "Nenhum dado recebido."}), 400
+            
+        login = data.get("login", "").strip().lower()
+        senha_atual = data.get("senha_atual", "")
+        nova_senha = data.get("nova_senha", "")
 
-    if not login or not senha_atual or not nova_senha:
-        return jsonify({"erro": "Preencha todos os campos."}), 400
+        if not login or not senha_atual or not nova_senha:
+            return jsonify({"erro": "Preencha todos os campos."}), 400
 
-    conn = get_db()
-    user = conn.execute("SELECT * FROM usuarios WHERE login = ? AND senha = ?", (login, senha_atual)).fetchone()
-    
-    if user:
-        conn.execute("UPDATE usuarios SET senha = ? WHERE login = ?", (nova_senha, login))
-        conn.commit()
-        conn.close()
-        return jsonify({"ok": True, "msg": "Senha alterada com sucesso!"})
-    else:
-        conn.close()
-        return jsonify({"erro": "Login ou senha atual incorretos."}), 400
+        conn = get_db()
+        user = conn.execute("SELECT * FROM usuarios WHERE login = ? AND senha = ?", (login, senha_atual)).fetchone()
+        
+        if user:
+            conn.execute("UPDATE usuarios SET senha = ? WHERE login = ?", (nova_senha, login))
+            conn.commit()
+            conn.close()
+            return jsonify({"ok": True, "msg": "Senha alterada com sucesso!"})
+        else:
+            conn.close()
+            return jsonify({"erro": "Login ou senha atual incorretos."}), 400
+            
+    except Exception as e:
+        # Se der qualquer erro no Python, ele vai retornar o texto do erro para a tela
+        return jsonify({"erro": f"Erro interno no servidor: {str(e)}"}), 500
+
 
 # ===== ROTA PARA EDITAR OCORRÊNCIA =====
 @app.route("/api/ocorrencias/<int:oid>/editar", methods=["PUT"])
