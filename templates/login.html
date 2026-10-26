@@ -4,7 +4,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <link rel="manifest" href="/static/manifest.json">
   <meta name="theme-color" content="#0a1f44">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏫</text></svg>">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22></text></svg>">
   <meta charset="UTF-8">
   <title>🔐 Login • Senac 2026</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
@@ -15,41 +15,87 @@
     <h1>Registro de Ocorrências</h1>
     <p class="sub">Médio Técnico • Acesso Restrito</p>
     
-    {% if erro %}
-      <div class="erro">{{ erro }}</div>
-    {% endif %}
+    {% if erro %}<div class="erro">{{ erro }}</div>{% endif %}
     
     <form method="POST">
       <input type="text" name="usuario" placeholder="Seu login" autofocus required>
       
-      <!-- CAMPO DE SENHA COM O OLHINHO (ESTILO DIRETO NA TAG) -->
       <div style="position: relative; width: 100%; margin-bottom: 15px;">
         <input type="password" name="senha" id="campoSenha" placeholder="Sua senha" required 
                style="width: 100%; padding: 14px; padding-right: 45px; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 15px; margin-bottom: 0;">
-        
         <span id="toggleSenha" onclick="mostrarSenha()" 
-              style="position: absolute; right: 15px; top: 50%; transform: translateY(-50%); cursor: pointer; font-size: 18px; opacity: 0.6; z-index: 10;">
-          👁️
-        </span>
+              style="position: absolute; right: 15px; top: 50%; transform: translateY(-50%); cursor: pointer; font-size: 18px; opacity: 0.6; z-index: 10;">👁️</span>
       </div>
       
-      <button type="submit" style="margin-top: 5px;">Entrar</button>
+      <button type="submit">Entrar</button>
     </form>
+
+    <p style="text-align: center; margin-top: 15px;">
+      <a href="#" onclick="abrirModalSenha(event)" style="color: var(--marinho); font-size: 13px; text-decoration: none; font-weight: bold;">🔑 Trocar minha senha</a>
+    </p>
     
     <p class="hint">Sessão expira ao sair da tela</p>
+  </div>
+
+  <!-- MODAL DE TROCA DE SENHA -->
+  <div id="modalSenha" style="display: none; position: fixed; inset: 0; background: rgba(10,31,68,.6); z-index: 999; padding: 20px; backdrop-filter: blur(3px); align-items: center; justify-content: center;">
+    <div style="background: white; padding: 30px; border-radius: 16px; max-width: 400px; width: 100%;">
+      <h2 style="color: var(--marinho); margin-bottom: 20px; text-align: center;">Trocar Senha</h2>
+      
+      <input type="text" id="loginTroca" placeholder="Seu login (ex: eliete)" style="width: 100%; padding: 12px; margin-bottom: 10px; border: 2px solid #e2e8f0; border-radius: 8px;">
+      <input type="password" id="senhaAtual" placeholder="Senha atual" style="width: 100%; padding: 12px; margin-bottom: 10px; border: 2px solid #e2e8f0; border-radius: 8px;">
+      <input type="password" id="novaSenha" placeholder="Nova senha" style="width: 100%; padding: 12px; margin-bottom: 20px; border: 2px solid #e2e8f0; border-radius: 8px;">
+      
+      <div style="display: flex; gap: 10px;">
+        <button onclick="fecharModalSenha()" style="flex: 1; padding: 12px; background: #94a3b8; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;">Cancelar</button>
+        <button onclick="salvarNovaSenha()" style="flex: 1; padding: 12px; background: var(--laranja); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;">Salvar</button>
+      </div>
+    </div>
   </div>
 
   <script>
     function mostrarSenha() {
       const inputSenha = document.getElementById('campoSenha');
       const icone = document.getElementById('toggleSenha');
-      
       if (inputSenha.type === "password") {
-        inputSenha.type = "text";
-        icone.innerText = "🙈";
+        inputSenha.type = "text"; icone.innerText = "🙈";
       } else {
-        inputSenha.type = "password";
-        icone.innerText = "👁️";
+        inputSenha.type = "password"; icone.innerText = "👁️";
+      }
+    }
+
+    function abrirModalSenha(e) {
+      e.preventDefault();
+      document.getElementById('modalSenha').style.display = 'flex';
+    }
+
+    function fecharModalSenha() {
+      document.getElementById('modalSenha').style.display = 'none';
+    }
+
+    async function salvarNovaSenha() {
+      const login = document.getElementById('loginTroca').value;
+      const senha_atual = document.getElementById('senhaAtual').value;
+      const nova_senha = document.getElementById('novaSenha').value;
+
+      if (!login || !senha_atual || !nova_senha) {
+        alert("Preencha todos os campos!");
+        return;
+      }
+
+      const r = await fetch('/api/trocar_senha', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ login, senha_atual, nova_senha })
+      });
+
+      const res = await r.json();
+
+      if (r.ok) {
+        alert('✅ Senha alterada com sucesso! Use a nova senha para entrar.');
+        fecharModalSenha();
+      } else {
+        alert('❌ ' + (res.erro || 'Erro ao alterar senha.'));
       }
     }
   </script>
