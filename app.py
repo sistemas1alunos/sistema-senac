@@ -697,9 +697,9 @@ def trocar_senha():
             return jsonify({"erro": "Login ou senha atual incorretos."}), 400
             
     except Exception as e:
-        # Se der qualquer erro no Python, ele vai retornar o texto do erro para a tela
-        return jsonify({"erro": f"Erro interno no servidor: {str(e)}"}), 500
-
+        # ISSO VAI MOSTRAR O ERRO REAL NA TELA
+        return jsonify({"erro": f"Erro interno: {str(e)}"}), 500
+        
 
 # ===== ROTA PARA EDITAR OCORRÊNCIA =====
 @app.route("/api/ocorrencias/<int:oid>/editar", methods=["PUT"])
