@@ -22,10 +22,26 @@
     <form method="POST">
       <input type="text" name="usuario" placeholder="Seu login" autofocus required>
       <input type="password" name="senha" placeholder="Sua senha" required>
+      <span id="toggleSenha" class="olho-senha" onclick="mostrarSenha()">👁️</span>
       <button type="submit">Entrar</button>
     </form>
     
     <p class="hint">Sessão expira ao sair da tela</p>
   </div>
+
+  <script>
+  function mostrarSenha() {
+    const inputSenha = document.getElementById('campoSenha');
+    const icone = document.getElementById('toggleSenha');
+    
+    if (inputSenha.type === "password") {
+      inputSenha.type = "text";
+      icone.innerText = "🙈"; // Muda o olho para o macaquinho
+    } else {
+      inputSenha.type = "password";
+      icone.innerText = "👁️"; // Volta para o olho
+    }
+  }
+</script>
 </body>
 </html>
