@@ -324,6 +324,7 @@ document.getElementById('formOcorrencia').addEventListener('submit', async (e) =
 
   const dataInput = document.getElementById('dataOcorrencia').value;
   const horaInput = document.getElementById('horaOcorrencia').value;
+  const anexoInput = document.getElementById('anexoOcorrencia');
 
   let dataFormatada = "";
   if (dataInput) {
@@ -331,19 +332,22 @@ document.getElementById('formOcorrencia').addEventListener('submit', async (e) =
     dataFormatada = `${dia}/${mes}/${ano}`;
   }
 
-  const payload = {
-    aluno_id: +alunoId,
-    codigo: document.getElementById('selCodigo').value,
-    descricao: document.getElementById('descricao').value,
-    data: dataFormatada,
-    hora: horaInput
-  };
+  // Monta o FormData para enviar a foto
+  const fd = new FormData();
+  fd.append("aluno_id", alunoId);
+  fd.append("codigo", document.getElementById('selCodigo').value);
+  fd.append("descricao", document.getElementById('descricao').value);
+  fd.append("data", dataFormatada);
+  fd.append("hora", horaInput);
+  
+  if (anexoInput && anexoInput.files.length > 0) {
+    fd.append("anexo", anexoInput.files[0]);
+  }
   
   try {
     const r = await fetch('/api/ocorrencias', {
       method: 'POST', 
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify(payload)
+      body: fd // Enviando como FormData
     });
     
     if (r.ok) {
@@ -353,13 +357,14 @@ document.getElementById('formOcorrencia').addEventListener('submit', async (e) =
       inputBuscaAluno.value = "";
       inputHiddenAluno.value = "";
       
+      // Reseta a data para hoje
       const hoje = new Date();
       const ano = hoje.getFullYear();
       const mes = String(hoje.getMonth() + 1).padStart(2, '0');
       const dia = String(hoje.getDate()).padStart(2, '0');
       document.getElementById('dataOcorrencia').value = `${ano}-${mes}-${dia}`;
 
-      carregarHistorico(payload.aluno_id);
+      carregarHistorico(alunoId); // Alterado de payload.aluno_id para alunoId
       
       if (turmaAtual === "") carregarTurmas();
       else carregarAlunos();
@@ -373,6 +378,7 @@ document.getElementById('formOcorrencia').addEventListener('submit', async (e) =
     alert('❌ Erro de conexão com o servidor.');
   }
 });
+
 
 // ===== HISTÓRICO E MODAL =====
 async function carregarHistorico(alunoId) {
@@ -389,7 +395,10 @@ async function carregarHistorico(alunoId) {
       <span class="badge" style="background:${oc.cor}">${o.codigo}</span>
       <strong>${oc.nome}</strong><br>
       <small>${o.registrado_por} • ${o.data}</small>
+      <!-- BOTÃO DO DESCRIÇÃO -->
       ${o.descricao ? `<p style="margin-top:8px;font-size:13px;">${o.descricao}</p>` : ''}
+      <!-- BOTÃO DO ANEXO -->
+        ${o.anexo ? `<a href="/uploads/${o.anexo}" target="_blank" style="display: inline-block; margin-top: 10px; font-size: 12px; font-weight: bold; color: var(--laranja); text-decoration: none;">📎 Ver Anexo</a>` : ''}
     </div>`;
   }).join('');
 }
