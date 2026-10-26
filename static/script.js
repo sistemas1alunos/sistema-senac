@@ -715,32 +715,38 @@ carregarTurmasNoSelect();
 
 // ===== LOGS DE AUDITORIA =====
 async function abrirLogs() {
-  // 1. Esconde todas as abas e mostra a de logs
+  // 1. Esconde todas as abas
   document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
   
+  // 2. Mostra a aba de logs
   const abaLogs = document.getElementById('logs');
   if (abaLogs) abaLogs.classList.add('active');
 
-  // 2. Remove a cor laranja de todos os botões do menu e coloca no botão de Auditoria
+  // 3. Atualiza o botão no topo (só para ficar laranja)
   document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
-  // Como o botão de auditoria não tem data-tab, selecionamos ele pelo texto
   const botoes = document.querySelectorAll('.tab');
   botoes.forEach(b => {
     if (b.innerText.includes('Auditoria')) b.classList.add('active');
   });
 
-  // 3. Busca os dados no Python
+  // 4. Busca os dados no Python
   try {
     const r = await fetch('/api/logs');
     const logs = await r.json();
     const div = document.getElementById('listaLogs');
+
+    // Se a div não existir, avisa no console
+    if (!div) {
+      console.error("A div 'listaLogs' não foi encontrada no HTML!");
+      return;
+    }
 
     if (!logs || logs.length === 0) {
       div.innerHTML = '<p style="color:#94a3b8;">Nenhuma alteração registrada até o momento.</p>';
       return;
     }
 
-    // 4. Monta o HTML na tela
+    // 5. Monta o HTML na tela
     div.innerHTML = logs.map(l => {
       let corBorda = '#1e3a8a'; // Azul padrão
       if (l.acao.includes('Excluir')) corBorda = '#dc2626'; // Vermelho
@@ -762,10 +768,10 @@ async function abrirLogs() {
     
   } catch (error) {
     console.error("Erro ao carregar logs", error);
-    document.getElementById('listaLogs').innerHTML = '<p style="color:red;">Erro ao carregar o histórico.</p>';
+    const div = document.getElementById('listaLogs');
+    if (div) div.innerHTML = '<p style="color:red;">Erro ao carregar o histórico.</p>';
   }
 }
-
 
 // ===== INICIALIZAÇÃO DO SISTEMA =====
 setInterval(checarNotificacoes, 30000);
