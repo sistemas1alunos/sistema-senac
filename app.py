@@ -5,6 +5,8 @@ import sqlite3, os, uuid
 from datetime import datetime
 from weasyprint import HTML
 import io
+from openpyxl import Workbook
+from openpyxl.styles import Font, PatternFill, Alignment
 
 app = Flask(__name__)
 app.secret_key = "senac2026_chave_secreta_super_segura"
@@ -547,6 +549,63 @@ def restaurar_ocorrencia(oid):
     conn.commit()
     conn.close()
     return jsonify({"ok": True})
+
+# ===== ROTA PARA EXPORTAR EXCEL =====
+@app.route("/api/relatorio_excel")
+def exportar_excel():
+    conn = get_db()
+    sql = """
+        SELECT o.*, a.nome as aluno_nome, a.turma as aluno_turma, a.turno 
+        FROM ocorrencias o
+        JOIN alunos a ON o.aluno_id = a.id
+        WHERE o.excluida = 0
+        ORDER BY o.id DESC
+    """
+    rows = conn.execute(sql).fetchall()
+    conn.close()
+
+    # Cria a planilha em memória
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Ocorrências Senac"
+
+    # Estilos (Cores do Senac)
+    cor_cabecalho = PatternFill(start_color="0A1F44", end_color="0A1F44", fill_type="solid")
+    cor_titulo = Font(color="FFFFFF", bold=True, size=12)
+    
+    # Cria o cabeçalho
+    cabecalhos = ["Data", "Aluno", "Turma", "Turno", "Código", "Descrição", "Registrado Por"]
+    ws.append(cabecalhos)
+
+    # Formata o cabeçalho (fundo azul, letra branca, negrito)
+    for cell in ws[1]:
+        cell.fill = cor_cabecalho
+        cell.font = cor_titulo
+        cell.alignment = Alignment(horizontal="center", vertical="center")
+
+    # Adiciona os dados
+    for row in rows:
+        ws.append([
+            row['data'], row['aluno_nome'], row['aluno_turma'], 
+            row['turno'], row['codigo'], row['descricao'], row['registrado_por']
+        ])
+
+    # Ajusta a largura das colunas para ficar bonito
+    larguras = [18, 30, 10, 12, 10, 40, 25]
+    for i, coluna in enumerate(larguras, start=1):
+        ws.column_dimensions[chr(64 + i)].width = coluna
+
+    # Salva o arquivo em memória
+    buffer = io.BytesIO()
+    wb.save(buffer)
+    buffer.seek(0)
+
+    # Retorna o Excel para o navegador baixar
+    response = make_response(buffer.getvalue())
+    response.headers['Content-Type'] = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    response.headers['Content-Disposition'] = f'attachment; filename=relatorio_senac_{datetime.now().strftime("%d_%m_%Y")}.xlsx'
+    return response
+    
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=5000)
