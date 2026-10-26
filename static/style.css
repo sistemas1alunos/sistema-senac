@@ -430,3 +430,31 @@ h3 { color: var(--marinho); margin: 25px 0 15px; }
   .legenda-grid { grid-template-columns: 1fr; }
   #listaAprovacao > div { flex-direction: column; align-items: flex-start !important; gap: 10px; }
 }
+
+/* ===== OLHINHO DA SENHA ===== */
+.senha-container {
+  position: relative;
+  width: 100%;
+  margin-bottom: 15px; /* Mesmo espaço que o input normal tem */
+}
+
+.senha-container input {
+  margin-bottom: 0; /* Remove a margem de baixo só desse input específico */
+  padding-right: 40px; /* Dá um espaço para o texto não ficar embaixo do olhinho */
+}
+
+.olho-senha {
+  position: absolute;
+  right: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  font-size: 18px;
+  user-select: none;
+  opacity: 0.6;
+  transition: opacity 0.2s;
+}
+
+.olho-senha:hover {
+  opacity: 1;
+}
