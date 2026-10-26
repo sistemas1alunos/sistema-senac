@@ -101,7 +101,6 @@ def init_db():
         FOREIGN KEY(aluno_id) REFERENCES alunos(id)
     )""")
     
-    
     c.execute("""CREATE TABLE IF NOT EXISTS logs (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         usuario TEXT NOT NULL,
@@ -110,10 +109,9 @@ def init_db():
         data_hora TEXT NOT NULL
     )""")
     
-    
     conn.commit()
     conn.close()
-    
+
 init_db()
 
 def get_db():
@@ -244,7 +242,7 @@ def excluir_aluno(aid):
     conn.commit()
     conn.close()
     
-        registrar_log(session.get("usuario_nome"), "Excluir Aluno", f"Apagou o aluno ID {aid} e suas ocorrências.")
+    registrar_log(session.get("usuario_nome"), "Excluir Aluno", f"Apagou o aluno ID {aid} e suas ocorrências.")
     
     return jsonify({"ok": True})
 
@@ -308,7 +306,6 @@ def registrar_ocorrencia():
 @app.route("/api/ocorrencias/<int:aluno_id>")
 def listar_ocorrencias(aluno_id):
     conn = get_db()
-    # AQUI: Só mostra se NÃO estiver na lixeira
     rows = conn.execute("""SELECT * FROM ocorrencias WHERE aluno_id = ? AND excluida = 0
                            ORDER BY id DESC""", (aluno_id,)).fetchall()
     conn.close()
@@ -345,11 +342,9 @@ def criar_turma():
     if not nome or not qtd:
         return jsonify({"erro": "Preencha todos os campos"}), 400
 
-    # REGRA: Só aceita se terminar com A ou B
     if not (nome.endswith('A') or nome.endswith('B')):
         return jsonify({"erro": "A turma deve terminar com A (Manhã) ou B (Tarde). Ex: 1A, 2B."}), 400
 
-    # Define o turno com base na letra
     if nome.endswith('A'):
         turno = "Manhã"
     else:
@@ -363,7 +358,6 @@ def criar_turma():
         return jsonify({"ok": True})
     except sqlite3.IntegrityError:
         return jsonify({"erro": "Essa turma já está cadastrada!"}), 400
-
 
 @app.route("/api/turmas/<int:tid>", methods=["DELETE"])
 def deletar_turma(tid):
@@ -404,7 +398,6 @@ def todas_ocorrencias():
     aluno = request.args.get("aluno", "")
     data_ini = request.args.get("data_ini", "")
     
-    # AQUI: Filtra as que não estão na lixeira
     sql = """
         SELECT o.*, a.nome as aluno_nome, a.turma as aluno_turma 
         FROM ocorrencias o
@@ -441,10 +434,8 @@ def gerar_relatorio_pdf():
     rows = conn.execute(sql).fetchall()
     conn.close()
 
-    # Pega o nome de quem está logado
     quem_emitiu = session.get("usuario_nome", "Sistema")
 
-    # Monta o HTML do relatório
     html_content = """
     <html>
     <head>
@@ -491,7 +482,6 @@ def gerar_relatorio_pdf():
     response.headers['Content-Disposition'] = 'attachment; filename=relatorio_senac.pdf'
     return response
 
-
 # ===== ROTA PARA BAIXAR BACKUP DO BANCO =====
 @app.route("/api/backup")
 def backup_db():
@@ -512,7 +502,6 @@ def backup_db():
 def estatisticas():
     conn = get_db()
     
-    # AQUI: Filtra as que não estão na lixeira
     sql_turmas = """
         SELECT a.turma, COUNT(o.id) as total 
         FROM ocorrencias o
@@ -523,7 +512,6 @@ def estatisticas():
     """
     dados_turmas = conn.execute(sql_turmas).fetchall()
     
-    # AQUI: Filtra as que não estão na lixeira
     sql_codigos = """
         SELECT codigo, COUNT(id) as total 
         FROM ocorrencias 
@@ -592,43 +580,35 @@ def exportar_excel():
     rows = conn.execute(sql).fetchall()
     conn.close()
 
-    # Cria a planilha em memória
     wb = Workbook()
     ws = wb.active
     ws.title = "Ocorrências Senac"
 
-    # Estilos (Cores do Senac)
     cor_cabecalho = PatternFill(start_color="0A1F44", end_color="0A1F44", fill_type="solid")
     cor_titulo = Font(color="FFFFFF", bold=True, size=12)
     
-    # Cria o cabeçalho
     cabecalhos = ["Data", "Aluno", "Turma", "Turno", "Código", "Descrição", "Registrado Por"]
     ws.append(cabecalhos)
 
-    # Formata o cabeçalho (fundo azul, letra branca, negrito)
     for cell in ws[1]:
         cell.fill = cor_cabecalho
         cell.font = cor_titulo
         cell.alignment = Alignment(horizontal="center", vertical="center")
 
-    # Adiciona os dados
     for row in rows:
         ws.append([
             row['data'], row['aluno_nome'], row['aluno_turma'], 
             row['turno'], row['codigo'], row['descricao'], row['registrado_por']
         ])
 
-    # Ajusta a largura das colunas para ficar bonito
     larguras = [18, 30, 10, 12, 10, 40, 25]
     for i, coluna in enumerate(larguras, start=1):
         ws.column_dimensions[chr(64 + i)].width = coluna
 
-    # Salva o arquivo em memória
     buffer = io.BytesIO()
     wb.save(buffer)
     buffer.seek(0)
 
-    # Retorna o Excel para o navegador baixar
     response = make_response(buffer.getvalue())
     response.headers['Content-Type'] = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     response.headers['Content-Disposition'] = f'attachment; filename=relatorio_senac_{datetime.now().strftime("%d_%m_%Y")}.xlsx'
