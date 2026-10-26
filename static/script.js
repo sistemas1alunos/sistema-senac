@@ -76,23 +76,19 @@ async function carregarTurmasAdmin() {
         <button onclick="excluirTurma(${t.id})" style="background:none; border:none; color:#dc2626; cursor:pointer; font-size:20px; width:auto; padding:0;" title="Excluir turma">🗑</button>
       </div>
       
-      <label>Turno</label>
-      <select id="turno-${t.id}">
-        <option value="Manhã" ${t.turno === 'Manhã' ? 'selected' : ''}>Manhã</option>
-        <option value="Tarde" ${t.turno === 'Tarde' ? 'selected' : ''}>Tarde</option>
-      </select>
+      <!-- Mostra o turno apenas como texto -->
+      <p style="font-size: 14px; color: #64748b; margin-bottom: 15px;">Turno: <strong>${t.turno}</strong></p>
       
       <label>Quantidade de Alunos</label>
       <input type="number" id="qtd-${t.id}" value="${t.qtd_alunos}" min="1">
       
-      <button onclick="salvarTurma(${t.id})">Salvar Alterações</button>
+      <button onclick="salvarTurma(${t.id}, '${t.turno}')">Salvar Alterações</button>
     </div>
   `).join('');
 }
 
 async function cadastrarNovaTurma() {
   const nome = document.getElementById('novaTurmaNome').value;
-  const turno = document.getElementById('novaTurmaTurno').value;
   const qtd = document.getElementById('novaTurmaQtd').value;
 
   if (!nome || !qtd) {
@@ -100,10 +96,11 @@ async function cadastrarNovaTurma() {
     return;
   }
 
+  // O Python agora deduz o turno automaticamente pela letra A ou B
   const r = await fetch('/api/turmas', {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({ nome, turno, qtd_alunos: parseInt(qtd) })
+    body: JSON.stringify({ nome, turno: "", qtd_alunos: parseInt(qtd) })
   });
 
   if (r.ok) {
@@ -112,21 +109,22 @@ async function cadastrarNovaTurma() {
     document.getElementById('novaTurmaQtd').value = '';
     carregarTurmasAdmin();
     carregarTurmas(); 
+    carregarTurmasNoSelect(); // Atualiza a lista do cadastro de aluno
   } else {
     const err = await r.json();
     alert('❌ ' + (err.erro || 'Erro ao criar turma'));
   }
 }
 
-async function salvarTurma(id) {
-  const turno = document.getElementById(`turno-${id}`).value;
+async function salvarTurma(id, turnoAtual) {
   const qtd = document.getElementById(`qtd-${id}`).value;
   
   const r = await fetch(`/api/turmas/${id}`, {
     method: 'PUT',
     headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({ turno, qtd_alunos: parseInt(qtd) })
+    body: JSON.stringify({ turno: turnoAtual, qtd_alunos: parseInt(qtd) })
   });
+  
   if (r.ok) alert('✅ Turma atualizada com sucesso!');
 }
 
