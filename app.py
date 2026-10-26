@@ -277,8 +277,7 @@ def atualizar_aluno(aid):
     
     conn.commit()
     conn.close()
-
-     registrar_log(session.get("usuario_nome"), "Editar Aluno", f"Editou os dados do aluno ID {aid}.")
+    registrar_log(session.get("usuario_nome"), "Editar Aluno", f"Editou os dados do aluno ID {aid}.")
 
     return jsonify({"ok": True})
 
@@ -548,7 +547,7 @@ def mover_para_lixeira(oid):
     conn.execute("UPDATE ocorrencias SET excluida = 1 WHERE id = ?", (oid,))
     conn.commit()
     conn.close()
-     registrar_log(session.get("usuario_nome"), "Lixeira", f"Moveu a ocorrência ID {oid} para a lixeira.")
+    registrar_log(session.get("usuario_nome"), "Lixeira", f"Moveu a ocorrência ID {oid} para a lixeira.")
     return jsonify({"ok": True})
 
 @app.route("/api/lixeira", methods=["GET"])
