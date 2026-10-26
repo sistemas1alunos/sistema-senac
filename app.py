@@ -681,5 +681,35 @@ def trocar_senha():
         conn.close()
         return jsonify({"erro": "Login ou senha atual incorretos."}), 400
 
+# ===== ROTA PARA EDITAR OCORRÊNCIA =====
+@app.route("/api/ocorrencias/<int:oid>/editar", methods=["PUT"])
+def editar_ocorrencia(oid):
+    data = request.get_json()
+    conn = get_db()
+    
+    # Busca a ocorrência no banco
+    ocorrencia = conn.execute("SELECT * FROM ocorrencias WHERE id = ?", (oid,)).fetchone()
+    
+    if not ocorrencia:
+        conn.close()
+        return jsonify({"erro": "Ocorrência não encontrada."}), 404
+        
+    # REGRA DE SEGURANÇA: Só deixa editar se quem está logado for o autor
+    if ocorrencia['registrado_por'] != session.get("usuario_nome"):
+        conn.close()
+        return jsonify({"erro": "Você só pode editar ocorrências que você mesmo registrou."}), 403
+
+    # Atualiza os dados
+    conn.execute("""UPDATE ocorrencias SET 
+        codigo=?, descricao=?, data=? WHERE id=?""",
+        (data.get("codigo"), data.get("descricao"), data.get("data"), oid))
+    
+    conn.commit()
+    conn.close()
+    
+    registrar_log(session.get("usuario_nome"), "Editar Ocorrência", f"Editou a ocorrência ID {oid}.")
+    return jsonify({"ok": True})
+
+
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=5000)
