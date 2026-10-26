@@ -19,7 +19,7 @@
       <div class="erro">{{ erro }}</div>
     {% endif %}
     
-    <form method="POST" action="/login">
+    <form method="POST">
       <input type="text" name="usuario" placeholder="Seu login" autofocus required>
       
       <div class="senha-container">
@@ -29,8 +29,28 @@
       
       <button type="submit">Entrar</button>
     </form>
+
+    <p style="text-align: center; margin-top: 15px;">
+      <a href="#" onclick="abrirModalSenha(event)" style="color: var(--marinho); font-size: 13px; text-decoration: none; font-weight: bold;">🔑 Trocar minha senha</a>
+    </p>
     
     <p class="hint">Sessão expira ao sair da tela</p>
+  </div>
+
+  <!-- MODAL DE TROCA DE SENHA -->
+  <div id="modalSenha" style="display: none; position: fixed; inset: 0; background: rgba(10,31,68,.6); z-index: 999; padding: 20px; backdrop-filter: blur(3px); align-items: center; justify-content: center;">
+    <div style="background: white; padding: 30px; border-radius: 16px; max-width: 400px; width: 100%;">
+      <h2 style="color: var(--marinho); margin-bottom: 20px; text-align: center;">Trocar Senha</h2>
+      
+      <input type="text" id="loginTroca" placeholder="Seu login" style="width: 100%; padding: 12px; margin-bottom: 10px; border: 2px solid #e2e8f0; border-radius: 8px;">
+      <input type="password" id="senhaAtual" placeholder="Senha atual (padrão)" style="width: 100%; padding: 12px; margin-bottom: 10px; border: 2px solid #e2e8f0; border-radius: 8px;">
+      <input type="password" id="novaSenha" placeholder="Nova senha" style="width: 100%; padding: 12px; margin-bottom: 20px; border: 2px solid #e2e8f0; border-radius: 8px;">
+      
+      <div style="display: flex; gap: 10px;">
+        <button onclick="fecharModalSenha()" style="flex: 1; padding: 12px; background: #94a3b8; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;">Cancelar</button>
+        <button onclick="salvarNovaSenha()" style="flex: 1; padding: 12px; background: var(--laranja); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;">Salvar</button>
+      </div>
+    </div>
   </div>
 
   <script>
@@ -44,6 +64,53 @@
       } else {
         inputSenha.type = "password";
         icone.innerText = "👁️";
+      }
+    }
+
+    function abrirModalSenha(e) {
+      e.preventDefault();
+      document.getElementById('modalSenha').style.display = 'flex';
+    }
+
+    function fecharModalSenha() {
+      document.getElementById('modalSenha').style.display = 'none';
+    }
+
+    async function salvarNovaSenha() {
+      const login = document.getElementById('loginTroca').value;
+      const senha_atual = document.getElementById('senhaAtual').value;
+      const nova_senha = document.getElementById('novaSenha').value;
+
+      if (!login || !senha_atual || !nova_senha) {
+        alert("⚠️ Preencha todos os campos!");
+        return;
+      }
+
+      const btn = event.target;
+      const textoOriginal = btn.innerText;
+      btn.innerText = "⏳ Salvando...";
+      btn.disabled = true;
+
+      try {
+        const r = await fetch('/api/trocar_senha', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ login, senha_atual, nova_senha })
+        });
+
+        const res = await r.json();
+
+        if (r.ok) {
+          alert('✅ Senha alterada com sucesso! Use a nova senha para entrar.');
+          fecharModalSenha();
+        } else {
+          alert('❌ ' + (res.erro || 'Erro ao alterar senha.'));
+        }
+      } catch (error) {
+        alert('❌ Erro de conexão com o servidor.');
+      } finally {
+        btn.innerText = textoOriginal;
+        btn.disabled = false;
       }
     }
   </script>
