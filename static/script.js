@@ -1,6 +1,14 @@
 // ===== TABS E NAVEGAÇÃO =====
 document.querySelectorAll('.tab').forEach(btn => {
-  btn.addEventListener('click', () => {
+  btn.addEventListener('click', (e) => {
+    // Se o botão for de Auditoria, executa a função e para o resto
+    if (btn.innerText.includes('Auditoria')) {
+      e.preventDefault();
+      abrirLogs(); 
+      return;
+    }
+
+    // Lógica normal para as outras abas
     document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
     document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
     btn.classList.add('active');
@@ -722,35 +730,30 @@ async function abrirLogs() {
   const abaLogs = document.getElementById('logs');
   if (abaLogs) abaLogs.classList.add('active');
 
-  // 3. Atualiza o botão no topo (só para ficar laranja)
+  // 3. Deixa o botão de Auditoria laranja
   document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
   const botoes = document.querySelectorAll('.tab');
   botoes.forEach(b => {
     if (b.innerText.includes('Auditoria')) b.classList.add('active');
   });
 
-  // 4. Busca os dados no Python
+  // 4. Busca os dados e monta a tela
   try {
     const r = await fetch('/api/logs');
     const logs = await r.json();
     const div = document.getElementById('listaLogs');
 
-    // Se a div não existir, avisa no console
-    if (!div) {
-      console.error("A div 'listaLogs' não foi encontrada no HTML!");
-      return;
-    }
+    if (!div) return;
 
     if (!logs || logs.length === 0) {
       div.innerHTML = '<p style="color:#94a3b8;">Nenhuma alteração registrada até o momento.</p>';
       return;
     }
 
-    // 5. Monta o HTML na tela
     div.innerHTML = logs.map(l => {
-      let corBorda = '#1e3a8a'; // Azul padrão
-      if (l.acao.includes('Excluir')) corBorda = '#dc2626'; // Vermelho
-      if (l.acao.includes('Lixeira') || l.acao.includes('Restaurar')) corBorda = '#f59e0b'; // Laranja
+      let corBorda = '#1e3a8a';
+      if (l.acao.includes('Excluir')) corBorda = '#dc2626';
+      if (l.acao.includes('Lixeira') || l.acao.includes('Restaurar')) corBorda = '#f59e0b';
 
       return `
         <div class="hist-item" style="border-left-color: ${corBorda}; margin-bottom: 10px;">
@@ -772,6 +775,7 @@ async function abrirLogs() {
     if (div) div.innerHTML = '<p style="color:red;">Erro ao carregar o histórico.</p>';
   }
 }
+
 
 // ===== INICIALIZAÇÃO DO SISTEMA =====
 setInterval(checarNotificacoes, 30000);
