@@ -583,7 +583,6 @@ def mover_para_lixeira(oid):
         conn.close()
         return jsonify({"erro": "Ocorrência não encontrada."}), 404
         
-    # REGRA DE SEGURANÇA: Só deixa apagar se quem está logado for o autor
     if ocorrencia['registrado_por'] != session.get("usuario_nome"):
         conn.close()
         return jsonify({"erro": "Você só pode apagar ocorrências que você mesmo registrou."}), 403
@@ -593,7 +592,7 @@ def mover_para_lixeira(oid):
     conn.close()
     registrar_log(session.get("usuario_nome"), "Lixeira", f"Moveu a ocorrência ID {oid} para a lixeira.")
     return jsonify({"ok": True})
-
+    
 @app.route("/api/lixeira", methods=["GET"])
 def listar_lixeira():
     conn = get_db()
