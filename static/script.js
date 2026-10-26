@@ -565,10 +565,17 @@ async function carregarMural() {
     return;
   }
 
+  // Pega o nome de quem está logado
+  const usuarioLogado = "{{ session.usuario_nome }}";
+
   div.innerHTML = lista.map(o => {
     const oc = OCORRENCIAS[o.codigo] || { nome: o.codigo, cor: '#64748b' };
+    
+    // Verifica se quem está logado é o autor da ocorrência
+    const podeEditar = (o.registrado_por === usuarioLogado);
+
     return `
-      <div class="hist-item" style="border-left-color:${oc.cor}">
+      <div class="hist-item" style="border-left-color:${oc.cor}; position: relative; padding-right: 80px;">
         <div style="display: flex; justify-content: space-between;">
           <strong>${o.aluno_nome} (${o.aluno_turma})</strong>
           <small>${o.data}</small>
@@ -576,6 +583,12 @@ async function carregarMural() {
         <span class="badge" style="background:${oc.cor}">${o.codigo}</span> ${oc.nome}<br>
         <small>Registrado por: ${o.registrado_por}</small>
         ${o.descricao ? `<p style="margin-top:8px; font-size:13px;">${o.descricao}</p>` : ''}
+        
+        <!-- BOTÕES DE EDITAR E APAGAR (SÓ APARECEM SE FOR O AUTOR) -->
+        <div style="position: absolute; right: 10px; top: 10px; display: flex; gap: 8px;">
+          ${podeEditar ? `<button onclick="abrirModalEdicao(${o.id}, '${o.codigo}', '${o.data}', '${o.descricao.replace(/'/g,"\\'")}')" style="background: none; border: none; cursor: pointer; font-size: 16px;" title="Editar">✏️</button>` : ''}
+          ${podeEditar ? `<button onclick="apagarOcorrencia(${o.id})" style="background: none; border: none; color: #dc2626; cursor: pointer; font-size: 16px;" title="Apagar">🗑</button>` : ''}
+        </div>
       </div>
     `;
   }).join('');
@@ -585,7 +598,6 @@ async function carregarMural() {
     document.getElementById('badge-notif').style.display = 'none';
   }
 }
-
 function filtrarMural() {
   carregarMural();
 }
