@@ -146,7 +146,7 @@
           {% endfor %}
       </select>
       
-      <!-- CAMPO DE DATA E HORA -->
+            <!-- CAMPO DE DATA E HORA -->
       <div style="display: flex; gap: 10px;">
         <div style="flex: 1;">
           <label style="font-size: 13px; font-weight: bold; color: var(--marinho); display: block; margin-bottom: 5px;">Data da Ocorrência</label>
@@ -157,6 +157,13 @@
           <input type="time" id="horaOcorrencia" style="width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 10px;">
         </div>
       </div>
+
+      
+      <div>
+        <label style="font-size: 13px; font-weight: bold; color: var(--marinho); display: block; margin-bottom: 5px;">📎 Anexar Foto/Arquivo (Opcional)</label>
+        <input type="file" id="anexoOcorrencia" name="anexo" accept="image/*, .pdf" style="width: 100%; padding: 10px; border: 2px dashed #cbd5e1; border-radius: 10px; background: #f8fafc; cursor: pointer;">
+      </div>
+    
 
       <textarea id="descricao" placeholder="Observações (opcional)"></textarea>
       <button type="submit">Registrar</button>
