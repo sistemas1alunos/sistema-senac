@@ -19,8 +19,9 @@
       <div class="erro">{{ erro }}</div>
     {% endif %}
     
+    <!-- FORMULÁRIO DE LOGIN -->
     <form method="POST">
-      <input type="text" name="usuario" placeholder="Seu login" autofocus required>
+      <input type="text" name="usuario" placeholder="Seu login (ex: eliete)" autofocus required>
       
       <div class="senha-container">
         <input type="password" name="senha" id="campoSenha" placeholder="Sua senha" required>
@@ -42,18 +43,29 @@
     <div style="background: white; padding: 30px; border-radius: 16px; max-width: 400px; width: 100%;">
       <h2 style="color: var(--marinho); margin-bottom: 20px; text-align: center;">Trocar Senha</h2>
       
-      <input type="text" id="loginTroca" placeholder="Seu login" style="width: 100%; padding: 12px; margin-bottom: 10px; border: 2px solid #e2e8f0; border-radius: 8px;">
-      <input type="password" id="senhaAtual" placeholder="Senha atual (padrão)" style="width: 100%; padding: 12px; margin-bottom: 10px; border: 2px solid #e2e8f0; border-radius: 8px;">
-      <input type="password" id="novaSenha" placeholder="Nova senha" style="width: 100%; padding: 12px; margin-bottom: 20px; border: 2px solid #e2e8f0; border-radius: 8px;">
+      <input type="text" id="loginTroca" placeholder="Seu login (ex: eliete)" style="width: 100%; padding: 12px; margin-bottom: 10px; border: 2px solid #e2e8f0; border-radius: 8px;">
+      
+      <!-- CAMPO SENHA ATUAL COM OLHINHO -->
+      <div style="position: relative; margin-bottom: 10px;">
+        <input type="password" id="senhaAtual" placeholder="Senha atual (padrão)" style="width: 100%; padding: 12px; padding-right: 40px; border: 2px solid #e2e8f0; border-radius: 8px;">
+        <span onclick="mostrarSenhaModal('senhaAtual', this)" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; font-size: 18px;">👁️</span>
+      </div>
+      
+      <!-- CAMPO NOVA SENHA COM OLHINHO -->
+      <div style="position: relative; margin-bottom: 20px;">
+        <input type="password" id="novaSenha" placeholder="Nova senha" style="width: 100%; padding: 12px; padding-right: 40px; border: 2px solid #e2e8f0; border-radius: 8px;">
+        <span onclick="mostrarSenhaModal('novaSenha', this)" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; font-size: 18px;">👁️</span>
+      </div>
       
       <div style="display: flex; gap: 10px;">
         <button onclick="fecharModalSenha()" style="flex: 1; padding: 12px; background: #94a3b8; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;">Cancelar</button>
-        <button onclick="salvarNovaSenha()" style="flex: 1; padding: 12px; background: var(--laranja); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;">Salvar</button>
+        <button onclick="salvarNovaSenha(event)" style="flex: 1; padding: 12px; background: var(--laranja); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;">Salvar</button>
       </div>
     </div>
   </div>
 
   <script>
+    // Função do olhinho no Login principal
     function mostrarSenha() {
       const inputSenha = document.getElementById('campoSenha');
       const icone = document.getElementById('toggleSenha');
@@ -67,6 +79,20 @@
       }
     }
 
+    // Função do olhinho no Modal de Troca
+    function mostrarSenhaModal(idCampo, elemento) {
+      const input = document.getElementById(idCampo);
+      
+      if (input.type === "password") {
+        input.type = "text";
+        elemento.innerText = "🙈";
+      } else {
+        input.type = "password";
+        elemento.innerText = "👁️";
+      }
+    }
+
+    // Funções do Modal de Troca
     function abrirModalSenha(e) {
       e.preventDefault();
       document.getElementById('modalSenha').style.display = 'flex';
@@ -76,7 +102,9 @@
       document.getElementById('modalSenha').style.display = 'none';
     }
 
-    async function salvarNovaSenha() {
+    async function salvarNovaSenha(e) {
+      if (e) e.preventDefault(); // Evita recarregar a página
+
       const login = document.getElementById('loginTroca').value;
       const senha_atual = document.getElementById('senhaAtual').value;
       const nova_senha = document.getElementById('novaSenha').value;
@@ -86,7 +114,7 @@
         return;
       }
 
-      const btn = event.target;
+      const btn = e.target;
       const textoOriginal = btn.innerText;
       btn.innerText = "⏳ Salvando...";
       btn.disabled = true;
