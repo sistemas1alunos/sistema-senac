@@ -435,24 +435,26 @@ h3 { color: var(--marinho); margin: 25px 0 15px; }
 .senha-container {
   position: relative;
   width: 100%;
-  margin-bottom: 15px; /* Mesmo espaço que o input normal tem */
+  margin-bottom: 15px; 
 }
 
 .senha-container input {
-  margin-bottom: 0; /* Remove a margem de baixo só desse input específico */
-  padding-right: 40px; /* Dá um espaço para o texto não ficar embaixo do olhinho */
+  margin-bottom: 0 !important; 
+  padding-right: 45px !important; /* Espaço para o texto não ficar debaixo do olho */
+  width: 100%;
 }
 
 .olho-senha {
   position: absolute;
   right: 15px;
   top: 50%;
-  transform: translateY(-50%);
+  transform: translateY(-50%); /* Centraliza o olho no meio da caixinha */
   cursor: pointer;
   font-size: 18px;
   user-select: none;
   opacity: 0.6;
   transition: opacity 0.2s;
+  z-index: 10;
 }
 
 .olho-senha:hover {
