@@ -17,6 +17,7 @@
     <button class="tab" data-tab="turmas">🏫 Turmas</button>
     <button class="tab" data-tab="cadastro">➕ Cadastrar Aluno</button>
     <button class="tab" data-tab="ocorrencias">📋 Registrar</button>
+    <button class="tab" onclick="abrirLogs()">🕵️ Auditoria</button>
     
     <button class="tab" data-tab="mural">📊 Mural Geral</button>
     
@@ -230,6 +231,12 @@
         ✅ Confirmar Fim de Ano
       </button>
     </div>
+  </section>
+    <!-- ABA DE LOGS (AUDITORIA) -->
+  <section id="logs" class="tab-content">
+    <h2>🕵️ Histórico de Alterações (Auditoria)</h2>
+    <p style="color: #64748b; margin-bottom: 20px;">Aqui você pode ver exatamente quem alterou ou apagou algo no sistema e quando.</p>
+    <div id="listaLogs" style="margin-top: 20px;"></div>
   </section>
 </main>
 
