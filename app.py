@@ -81,7 +81,6 @@ def init_db():
         qtd_alunos INTEGER NOT NULL
     )""")
     
-    # Insere as turmas padrão se a tabela estiver vazia
     c.execute("SELECT COUNT(*) FROM turmas")
     if c.fetchone()[0] == 0:
         turmas_padrao = [
@@ -120,7 +119,6 @@ def get_db():
     conn = sqlite3.connect(db_path)
     conn.row_factory = sqlite3.Row
     return conn
-
 
 def registrar_log(usuario, acao, detalhes):
     conn = get_db()
@@ -186,7 +184,6 @@ def api_alunos():
     busca = request.args.get("busca", "").strip()
     turno = request.args.get("turno", "").strip()
 
-    # AQUI: Contamos as ocorrências APENAS se não estiverem na lixeira
     sql = """
         SELECT a.*, COUNT(o.id) as total_ocorrencias 
         FROM alunos a
@@ -233,6 +230,9 @@ def cadastrar_aluno():
                  (nome, turma, turno, foto_nome, datetime.now().isoformat()))
     conn.commit()
     conn.close()
+    
+    registrar_log(session.get("usuario_nome"), "Cadastrar Aluno", f"Cadastrou o aluno {nome} na turma {turma}.")
+    
     return jsonify({"ok": True})
 
 @app.route("/api/alunos/<int:aid>", methods=["DELETE"])
@@ -283,13 +283,12 @@ def atualizar_aluno(aid):
 # ===== API OCORRÊNCIAS =====
 @app.route("/api/ocorrencias", methods=["POST"])
 def registrar_ocorrencia():
-    # Agora recebemos via FormData, não JSON
     aluno_id = request.form.get("aluno_id")
     codigo = request.form.get("codigo")
     descricao = request.form.get("descricao", "")
     data_manual = request.form.get("data")
     hora_manual = request.form.get("hora", "")
-    anexo = request.files.get("anexo") # 👈 PEGA O ARQUIVO
+    anexo = request.files.get("anexo")
     
     if data_manual:
         data_formatada = f"{data_manual} às {hora_manual}" if hora_manual else data_manual
@@ -299,7 +298,6 @@ def registrar_ocorrencia():
     anexo_nome = None
     if anexo and anexo.filename:
         ext = os.path.splitext(anexo.filename)[1].lower()
-        # Aceita imagens e PDFs
         if ext in [".png", ".jpg", ".jpeg", ".webp", ".pdf"]:
             anexo_nome = f"{uuid.uuid4().hex}{ext}"
             anexo.save(os.path.join(app.config["UPLOAD_FOLDER"], anexo_nome))
@@ -313,7 +311,8 @@ def registrar_ocorrencia():
     
     conn.commit()
     conn.close()
-    return jsonify({"ok": True})    
+    return jsonify({"ok": True})
+    
 @app.route("/api/ocorrencias/<int:aluno_id>")
 def listar_ocorrencias(aluno_id):
     conn = get_db()
@@ -366,6 +365,9 @@ def criar_turma():
         conn.execute("INSERT INTO turmas (nome, turno, qtd_alunos) VALUES (?, ?, ?)", (nome, turno, qtd))
         conn.commit()
         conn.close()
+        
+        registrar_log(session.get("usuario_nome"), "Criar Turma", f"Criou a turma {nome} ({turno}).")
+        
         return jsonify({"ok": True})
     except sqlite3.IntegrityError:
         return jsonify({"erro": "Essa turma já está cadastrada!"}), 400
@@ -373,9 +375,15 @@ def criar_turma():
 @app.route("/api/turmas/<int:tid>", methods=["DELETE"])
 def deletar_turma(tid):
     conn = get_db()
+    turma = conn.execute("SELECT nome FROM turmas WHERE id = ?", (tid,)).fetchone() 
+    nome_turma = turma['nome'] if turma else "Desconhecida"
+    
     conn.execute("DELETE FROM turmas WHERE id = ?", (tid,))
     conn.commit()
     conn.close()
+    
+    registrar_log(session.get("usuario_nome"), "Excluir Turma", f"Apagou a turma {nome_turma}.")
+    
     return jsonify({"ok": True})
 
 # ===== ROTA PARA FINALIZAR ANO (PROGRESSÃO) =====
@@ -399,6 +407,9 @@ def finalizar_ano():
     
     conn.commit()
     conn.close()
+    
+    registrar_log(session.get("usuario_nome"), "Finalizar Ano", f"Finalizou o ano letivo para {len(aprovados)} alunos aprovados.")
+    
     return jsonify({"ok": True})
 
 # ===== ROTA PARA O MURAL GERAL =====
@@ -567,6 +578,7 @@ def limpar_lixeira():
     conn.execute("DELETE FROM ocorrencias WHERE excluida = 1")
     conn.commit()
     conn.close()
+    registrar_log(session.get("usuario_nome"), "Limpar Lixeira", "Esvaziou a lixeira de ocorrências.")
     return jsonify({"ok": True})
 
 @app.route("/api/ocorrencias/<int:oid>/restaurar", methods=["PUT"])
@@ -575,6 +587,7 @@ def restaurar_ocorrencia(oid):
     conn.execute("UPDATE ocorrencias SET excluida = 0 WHERE id = ?", (oid,))
     conn.commit()
     conn.close()
+    registrar_log(session.get("usuario_nome"), "Restaurar Ocorrência", f"Restaurou a ocorrência ID {oid} da lixeira.")
     return jsonify({"ok": True})
 
 # ===== ROTA PARA EXPORTAR EXCEL =====
@@ -624,7 +637,6 @@ def exportar_excel():
     response.headers['Content-Type'] = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     response.headers['Content-Disposition'] = f'attachment; filename=relatorio_senac_{datetime.now().strftime("%d_%m_%Y")}.xlsx'
     return response
-
 
 # ===== ROTA PARA VER OS LOGS =====
 @app.route("/api/logs")
