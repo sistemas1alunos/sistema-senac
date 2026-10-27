@@ -1,17 +1,20 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏫</text></svg>">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📋</text></svg>">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <link rel="manifest" href="/static/manifest.json">
   <meta name="theme-color" content="#0a1f44">
   <meta charset="UTF-8">
-  <title>📝 Painel • Senac 2026</title>
+  <title>📝 Painel • Sistema de Ocorrências MédioTec ZN</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
 <header class="topbar">
-  <div class="logo">🏫 SENAC <span>2026</span></div>
+  <div class="logo" style="display: flex; flex-direction: column; line-height: 1.1; text-align: left;">
+  <span style="color: white; font-size: 16px; font-weight: bold; letter-spacing: 0;">Sistema de Ocorrências</span>
+  <span style="color: var(--laranja); font-size: 14px; font-weight: bold; letter-spacing: 0;">MédioTec ZN</span>
+</div>
   <nav>
     <button class="tab active" data-tab="alunos">👥 Alunos</button>
     <button class="tab" data-tab="turmas">🏫 Turmas</button>
